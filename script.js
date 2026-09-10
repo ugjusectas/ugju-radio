@@ -64,7 +64,6 @@ let textosControlVivo = {
     play: "PLAY",
     pause: "PAUSE",
     reconnecting: "RECONNECTING",
-    listening: "LISTENING",
     goToLive: "GO TO LIVE RADIO",
     returnToLive: "RETURN TO LIVE RADIO"
 };
@@ -439,19 +438,14 @@ function actualizarControlVivo(reconectando = false) {
     controlesVivo.dataset.playing = String(reproduciendo);
     botonVivo.dataset.reconnecting = String(esperandoReconexion);
     iconoBotonVivo.textContent = reproduciendo ? "Ⅱ" : "▶";
-    iconoBotonVivo.hidden = reproduciendo;
-    etiquetaBotonVivo.hidden =
-        !reproduciendo && !iniciando && !esperandoReconexion;
-    etiquetaBotonVivo.textContent = esperandoReconexion
-        ? textosControlVivo.reconnecting
-        : iniciando || reproduciendo
-            ? `${textosControlVivo.listening}...`
-            : textosControlVivo.play;
+    iconoBotonVivo.hidden = false;
+    etiquetaBotonVivo.hidden = true;
+    etiquetaBotonVivo.textContent = "";
     botonVivo.setAttribute(
         "aria-label",
         reproduciendo
             ? textosControlVivo.pause
-            : etiquetaBotonVivo.textContent
+            : textosControlVivo.play
     );
 
     requestAnimationFrame(ajustarControlesVivo);
@@ -617,8 +611,7 @@ function vigilarEsperaVivo() {
 
         // La primera conexión de FreeSHOUTcast puede tardar varios segundos.
         // No la convertimos en una falsa reconexión ni iniciamos otra carga en
-        // paralelo: el mismo play sigue esperando y la interfaz conserva
-        // ESCUCHANDO... hasta que llega el evento playing.
+        // paralelo: el mismo play sigue esperando hasta el evento playing.
         if (!vivoIniciadoConExito) {
             actualizarControlVivo();
             return;
@@ -1762,7 +1755,6 @@ cargarIdioma(idioma)
         play: textos.live_play,
         pause: textos.live_pause,
         reconnecting: textos.live_reconnecting,
-        listening: textos.listening,
         goToLive: textos.live_go,
         returnToLive: textos.live_return
     };

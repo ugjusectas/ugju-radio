@@ -569,7 +569,7 @@ h1{
 }
 
 .live-toggle:disabled #live-toggle-icon{
-    display:none;
+    color:inherit;
 }
 
 .live-toggle[aria-busy="true"]{
