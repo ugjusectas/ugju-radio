@@ -1,19 +1,29 @@
-/* Digital sharing, beside the existing lower-right Linktree control. */
+/* Digital sharing, in the lower-left corner, level with Linktree. */
 .radio-share {
     position: fixed;
     z-index: 8;
-    right: calc(clamp(14px, 2vw, 28px) + 30px);
+    left: max(clamp(14px, 2vw, 28px), env(safe-area-inset-left));
     bottom: clamp(14px, 2vh, 24px);
-    width: 32px;
-    height: 32px;
+    width: 24px;
+    height: clamp(18px, calc(var(--content-width) * .042), 23px);
+    transform: translateY(3px);
     display: grid;
     place-items: center;
-    padding: 5px;
+    padding: 0;
     border: 0;
     background: transparent;
     color: #222;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
+}
+.radio-share::before {
+    content: "";
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
 }
 .radio-share svg {
     width: 20px;
@@ -29,7 +39,7 @@
 .radio-share-status {
     position: fixed;
     z-index: 8;
-    right: max(14px, env(safe-area-inset-right));
+    left: max(14px, env(safe-area-inset-left));
     bottom: max(62px, calc(env(safe-area-inset-bottom) + 54px));
     max-width: calc(100vw - 28px);
     margin: 0;
@@ -42,9 +52,8 @@
 .radio-share-copy { position: fixed; left: -9999px; top: 0; font-size: 16px; }
 @media (max-width: 600px) {
     .radio-share {
-        right: 38px;
-        bottom: max(0px, calc(env(safe-area-inset-bottom) - 8px));
-        width: 44px;
-        height: 44px;
+        left: max(10px, env(safe-area-inset-left));
+        bottom: max(8px, env(safe-area-inset-bottom));
+        transform: none;
     }
 }
