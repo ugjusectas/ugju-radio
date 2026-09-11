@@ -1,4 +1,7 @@
 {
+  "share_label": "分享 ÚGJÜ RADIO",
+  "share_copied": "链接已复制",
+  "share_error": "无法复制链接，请重试。",
   "state_living": "梦中",
   "state_broadcasting": "梦中",
   "state_sleeping": "沉睡",

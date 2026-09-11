@@ -1,4 +1,7 @@
 {
+  "share_label": "Partager ÚGJÜ RADIO",
+  "share_copied": "LIEN COPIÉ",
+  "share_error": "Impossible de copier le lien. Réessayez.",
   "state_living": "EN RÊVE",
   "state_broadcasting": "EN RÊVE",
   "state_sleeping": "ENDORMIE",

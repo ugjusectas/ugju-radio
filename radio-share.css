@@ -1,0 +1,50 @@
+/* Digital sharing, beside the existing lower-right Linktree control. */
+.radio-share {
+    position: fixed;
+    z-index: 8;
+    right: calc(clamp(14px, 2vw, 28px) + 30px);
+    bottom: clamp(14px, 2vh, 24px);
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    padding: 5px;
+    border: 0;
+    background: transparent;
+    color: #222;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.radio-share svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.radio-share:hover { opacity: .62; }
+.radio-share:focus-visible { outline: 1px solid currentColor; outline-offset: 2px; }
+.radio-share-status {
+    position: fixed;
+    z-index: 8;
+    right: max(14px, env(safe-area-inset-right));
+    bottom: max(62px, calc(env(safe-area-inset-bottom) + 54px));
+    max-width: calc(100vw - 28px);
+    margin: 0;
+    background: #EA52F3;
+    color: #222;
+    font: .72rem/1.35 "Courier Prime", "Courier New", monospace;
+    pointer-events: none;
+}
+.radio-share-status:not(:empty) { padding: 8px 10px; border: 1px solid currentColor; }
+.radio-share-copy { position: fixed; left: -9999px; top: 0; font-size: 16px; }
+@media (max-width: 600px) {
+    .radio-share {
+        right: 38px;
+        bottom: max(0px, calc(env(safe-area-inset-bottom) - 8px));
+        width: 44px;
+        height: 44px;
+    }
+}

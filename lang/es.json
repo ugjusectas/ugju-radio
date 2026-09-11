@@ -1,4 +1,7 @@
 {
+  "share_label": "Compartir ÚGJÜ RADIO",
+  "share_copied": "ENLACE COPIADO",
+  "share_error": "No se pudo copiar el enlace. Volvé a intentarlo.",
   "state_living": "SOÑANDO",
   "state_broadcasting": "SOÑANDO",
   "state_sleeping": "DURMIENDO",

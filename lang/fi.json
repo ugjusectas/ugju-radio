@@ -1,4 +1,7 @@
 {
+  "share_label": "Jaa ÚGJÜ RADIO",
+  "share_copied": "LINKKI KOPIOITU",
+  "share_error": "Linkkiä ei voitu kopioida. Yritä uudelleen.",
   "state_living": "UNEKSII",
   "state_broadcasting": "UNEKSII",
   "state_sleeping": "NUKKUU",

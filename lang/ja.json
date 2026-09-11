@@ -1,4 +1,7 @@
 {
+  "share_label": "ÚGJÜ RADIOを共有",
+  "share_copied": "リンクをコピーしました",
+  "share_error": "リンクをコピーできませんでした。もう一度お試しください。",
   "state_living": "夢を見ている",
   "state_broadcasting": "夢を見ている",
   "state_sleeping": "眠る",
