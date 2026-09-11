@@ -109,7 +109,7 @@
     </script>
 
     <link rel="stylesheet" href="style.css?v=20260827-7">
-    <link rel="stylesheet" href="radio-share.css?v=20260910-2">
+    <link rel="stylesheet" href="radio-share.css?v=20260911-1">
 
 </head>
 
@@ -256,12 +256,13 @@
         </a>
 
         <button class="radio-share" id="radio-share" type="button"
-            aria-label="Share ÚGJÜ RADIO" title="Share ÚGJÜ RADIO">
+            aria-label="Share ÚGJÜ RADIO" title="Share ÚGJÜ RADIO"
+            aria-haspopup="dialog" aria-controls="radio-share-panel">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <path d="M12 16V3m-4 4 4-4 4 4M5 12v9h14v-9"></path>
             </svg>
         </button>
-        <p class="radio-share-status" id="radio-share-status" role="status" aria-live="polite" aria-atomic="true"></p>
+
 
         <a
             class="linktree-link"
@@ -353,10 +354,21 @@
         ></iframe>
     </section>
 
+    <dialog class="radio-share-panel" id="radio-share-panel" aria-labelledby="radio-share-heading">
+        <button class="radio-share-close" id="radio-share-close" type="button" aria-label="Close" title="Close">×</button>
+        <h2 id="radio-share-heading">Share ÚGJÜ RADIO</h2>
+        <div class="radio-share-qr">
+            <img id="radio-share-qr" src="images/radio-qr-original.jpg"
+                alt="Scan to open ÚGJÜ RADIO" width="1024" height="1024">
+        </div>
+        <button class="radio-share-link" id="radio-share-link" type="button" autofocus>SHARE LINK</button>
+        <p class="radio-share-status" id="radio-share-status" role="status" aria-live="polite" aria-atomic="true"></p>
+    </dialog>
+
     <script src="observatory.js?v=20260821-2"></script>
     <script src="radio-notifications.js?v=20260827-1"></script>
     <script src="script.js?v=20260822-4"></script>
-    <script src="radio-share.js?v=20260910-1"></script>
+    <script src="radio-share.js?v=20260911-1"></script>
 
 </body>
 

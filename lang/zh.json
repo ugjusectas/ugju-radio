@@ -1,4 +1,7 @@
 {
+  "share_link": "分享链接",
+  "share_close": "关闭",
+  "share_qr": "扫码打开 ÚGJÜ RADIO",
   "share_label": "分享 ÚGJÜ RADIO",
   "share_copied": "链接已复制",
   "share_error": "无法复制链接，请重试。",

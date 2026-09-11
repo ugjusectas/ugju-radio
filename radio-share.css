@@ -36,19 +36,71 @@
 }
 .radio-share:hover { opacity: .62; }
 .radio-share:focus-visible { outline: 1px solid currentColor; outline-offset: 2px; }
-.radio-share-status {
+.radio-share-panel {
     position: fixed;
-    z-index: 8;
-    left: max(14px, env(safe-area-inset-left));
-    bottom: max(62px, calc(env(safe-area-inset-bottom) + 54px));
-    max-width: calc(100vw - 28px);
-    margin: 0;
+    inset: 0;
+    margin: auto;
+    width: min(320px, calc(100vw - 32px));
+    max-height: calc(100dvh - 32px);
+    box-sizing: border-box;
+    overflow: auto;
+    padding: 40px 20px 16px;
+    border: 1px solid #222;
     background: #EA52F3;
     color: #222;
-    font: .72rem/1.35 "Courier Prime", "Courier New", monospace;
-    pointer-events: none;
+    text-align: center;
+    font: 400 .8rem/1.4 "Courier Prime", "Courier New", monospace;
 }
-.radio-share-status:not(:empty) { padding: 8px 10px; border: 1px solid currentColor; }
+.radio-share-panel::backdrop { background: rgba(0, 0, 0, .3); }
+.radio-share-panel h2 {
+    margin: 0 0 16px;
+    font: inherit;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+.radio-share-close {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: 24px/1 monospace;
+    cursor: pointer;
+}
+/* Show the existing QR region without modifying the supplied artwork. */
+.radio-share-qr {
+    position: relative;
+    overflow: hidden;
+    width: min(100%, 240px);
+    aspect-ratio: 1;
+    margin: 0 auto 18px;
+    background: white;
+}
+.radio-share-qr img {
+    position: absolute;
+    width: 360.5634%;
+    max-width: none;
+    height: auto;
+    left: -18.3099%;
+    top: -250.3521%;
+}
+.radio-share-link {
+    min-height: 44px;
+    width: 100%;
+    padding: 10px;
+    border: 1px solid currentColor;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+.radio-share-link:hover { background: #222; color: #EA52F3; }
+.radio-share-panel button:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+.radio-share-status { min-height: 2.8em; margin: 12px 0 0; font: inherit; }
 .radio-share-copy { position: fixed; left: -9999px; top: 0; font-size: 16px; }
 @media (max-width: 600px) {
     .radio-share {
