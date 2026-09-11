@@ -98,6 +98,7 @@
     font: inherit;
     cursor: pointer;
 }
+.radio-share-link + .radio-share-link { margin-top: 8px; }
 .radio-share-link:hover { background: #222; color: #EA52F3; }
 .radio-share-panel button:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
 .radio-share-status { min-height: 2.8em; margin: 12px 0 0; font: inherit; }

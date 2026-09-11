@@ -5,11 +5,13 @@
     const status = document.getElementById("radio-share-status");
     const panel = document.getElementById("radio-share-panel");
     const shareLink = document.getElementById("radio-share-link");
+    const copyButton = document.getElementById("radio-share-copy-link");
     const close = document.getElementById("radio-share-close");
-    if (!button || !status || !panel || !shareLink || !close) return;
+    if (!button || !status || !panel || !shareLink || !copyButton || !close) return;
 
     button.addEventListener("click", () => {
         status.textContent = "";
+        updateActions();
         panel.showModal();
     });
     close.addEventListener("click", () => panel.close());
@@ -32,8 +34,22 @@
     let timer;
     let busy = false;
 
+    let shareLabel = "SHARE";
+    let copyLabel = "COPY LINK";
+    // iPadOS can identify as a Mac, including when a trackpad is attached.
+    const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+    function updateActions() {
+        const nativeShare = typeof navigator.share === "function";
+        shareLink.textContent = nativeShare ? shareLabel : copyLabel;
+        copyButton.textContent = copyLabel;
+        copyButton.hidden = mobile || !nativeShare;
+    }
+    updateActions();
+
     const language = document.documentElement.lang || "en";
-    fetch(`lang/${language}.json?v=20260911-1`)
+    fetch(`lang/${language}.json?v=20260911-2`)
         .then(response => {
             if (!response.ok) throw new Error("Share translations unavailable");
             return response.json();
@@ -43,7 +59,9 @@
             button.setAttribute("aria-label", label);
             button.title = label;
             document.getElementById("radio-share-heading").textContent = label;
-            shareLink.textContent = strings.share_link || "SHARE LINK";
+            shareLabel = strings.share_link || shareLabel;
+            copyLabel = strings.share_copy || copyLabel;
+            updateActions();
             close.title = strings.share_close || "Close";
             close.setAttribute("aria-label", close.title);
             document.getElementById("radio-share-qr").alt = strings.share_qr || "Scan to open ÚGJÜ RADIO";
@@ -80,13 +98,13 @@
         }
     }
 
-    shareLink.addEventListener("click", async () => {
+    async function performAction(useNativeShare) {
         if (busy) return;
         busy = true;
         clearTimeout(timer);
         status.textContent = "";
         try {
-            if (typeof navigator.share === "function") {
+            if (useNativeShare && typeof navigator.share === "function") {
                 try {
                     await navigator.share({ title: "ÚGJÜ RADIO", text, url });
                     return;
@@ -102,5 +120,8 @@
         } finally {
             busy = false;
         }
-    });
+    }
+
+    shareLink.addEventListener("click", () => performAction(true));
+    copyButton.addEventListener("click", () => performAction(false));
 })();
