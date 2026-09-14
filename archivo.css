@@ -189,9 +189,6 @@ h1{
     .archive-duration{display:none}
 }
 
-/* Stable controls for every language. */
+/* Shared type scale; controls keep their natural content width. */
 .archive-control,.archive-stop{font:inherit;font-weight:700;min-width:0;overflow-wrap:anywhere}
-.archive-controls{width:18ch;max-width:100%;display:grid;grid-template-columns:1fr 1fr}
-.archive-entry{grid-template-columns:8ch minmax(0,1fr) 7ch 18ch}
 .archive-entry-title,h1,#archive-subtitle,#archive-status,#back-link{overflow-wrap:anywhere;min-width:0}
-@media(max-width:600px){.archive-entry{grid-template-columns:8.5ch minmax(0,1fr) 14ch}.archive-controls{width:14ch}}
