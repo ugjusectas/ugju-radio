@@ -110,3 +110,5 @@
         transform: none;
     }
 }
+
+.radio-share-panel,.radio-share-link,.radio-share-status{overflow-wrap:anywhere;min-width:0}

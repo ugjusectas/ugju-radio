@@ -162,3 +162,10 @@ body.world-dissolving:not(.dissolution-started) .back-link{z-index:30;pointer-ev
 .dissolution-field.is-illuminated .rebirth-words{opacity:0;filter:blur(10px);transition:opacity 4.2s ease,filter 4.2s ease}
 
 @media(max-width:700px){h1{font-weight:500;text-shadow:0 0 .01px currentColor}.instruction{font-size:clamp(1.04rem,4.25vw,1.2rem);font-weight:500;line-height:1.45;letter-spacing:.008em}.fire-status{font-weight:500;opacity:.82}.rebirth-words{top:calc(50% + min(34vw,25dvh,150px));font-weight:500}}
+
+/* Each translation stays within its scene without changing type size. */
+.instruction{width:100%;max-width:100%;min-width:0;overflow-wrap:anywhere}
+.fire-status,.uri-text,.uri-purr,.rebirth-words{max-width:100%;min-width:0;overflow-wrap:anywhere}
+.fire{overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
+.fire h1{max-width:100%;overflow-wrap:anywhere}
+.rebirth-words{max-height:28dvh;overflow-y:auto;pointer-events:auto}

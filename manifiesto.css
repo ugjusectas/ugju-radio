@@ -780,3 +780,11 @@ h1{
  .support-zones > * + *{border-left:0;border-top:1px solid #111;padding:12px 0 0}
  .support-panel img{display:none}
 }
+
+/* Keep type sizes independent of translated paragraph length. */
+.manifesto-column{overflow:auto;overscroll-behavior:contain}
+.manifesto-column-inner{min-height:100%;height:auto;overflow-wrap:anywhere}
+.manifesto-title,h1{min-width:0;overflow-wrap:anywhere}
+.manifesto-project{white-space:normal;overflow-wrap:anywhere}
+.support-card,.support-option,.support-close,.house-notice{overflow-wrap:anywhere;min-width:0}
+#manifesto-project{white-space:normal;overflow-wrap:anywhere}

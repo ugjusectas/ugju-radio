@@ -50,3 +50,7 @@ body.uri-inverted .house-actions-fixed,body.world-dissolving .house-actions-fixe
  .support-zones > * + *{border-left:0;border-top:1px solid #111;padding:12px 0 0}
  .support-panel img{display:none}
 }
+
+.support-card,.support-option,.support-close,.house-notice{overflow-wrap:anywhere;min-width:0}
+.house-notice{width:min(360px,calc(100vw - 28px));max-height:calc(100dvh - 32px);overflow:auto}
+.house-actions{max-width:calc(100vw - 28px)}

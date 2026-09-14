@@ -1154,3 +1154,14 @@ y el resto de la composición se reduce como una sola pieza.
     }
 
 }
+
+/* Shared language geometry: text wraps inside the same reference width. */
+h1,.subtitle,#state,.house-note-line{overflow-wrap:anywhere;white-space:normal;max-width:100%}
+h1{flex:none}
+.subtitle,#state{flex:none}
+#radio{overflow-y:auto;justify-content:safe center}
+.house-note-line{overflow:visible;text-align:center;text-align-last:center}
+.live-status{flex-shrink:0;max-width:100%;height:36px;padding:3px 7px;white-space:normal;overflow-wrap:anywhere}
+#live-status-label{max-height:100%;overflow:auto}
+.live-controls{flex-wrap:wrap}
+.house-note-line{text-align:justify;text-align-last:justify}

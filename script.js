@@ -454,36 +454,8 @@ function actualizarControlVivo(reconectando = false) {
 
 
 function ajustarControlesVivo() {
-
     estadoVivo.style.fontSize = "";
     botonVivo.style.fontSize = "";
-
-    let tamañoEstado = parseFloat(
-        window.getComputedStyle(estadoVivo).fontSize
-    );
-    let tamañoBoton = parseFloat(
-        window.getComputedStyle(botonVivo).fontSize
-    );
-
-    for (let intento = 0; intento < 12; intento += 1) {
-        const desbordaEstado =
-            estadoVivo.scrollWidth > estadoVivo.clientWidth + 1;
-        const desbordaBoton =
-            botonVivo.scrollWidth > botonVivo.clientWidth + 1;
-        const desbordaConjunto =
-            estadoVivo.offsetWidth + botonVivo.offsetWidth + 6 >
-            controlesVivo.clientWidth - 8;
-
-        if (!desbordaEstado && !desbordaBoton && !desbordaConjunto) {
-            break;
-        }
-
-        tamañoEstado *= .94;
-        tamañoBoton *= .94;
-        estadoVivo.style.fontSize = `${Math.max(9,tamañoEstado)}px`;
-        botonVivo.style.fontSize = `${Math.max(9,tamañoBoton)}px`;
-    }
-
 }
 
 
@@ -1486,103 +1458,49 @@ function centrarTextoMedido(elemento) {
 }
 
 
-function ajustarEstado() {
-
-    estado.style.fontSize = "";
-
-    requestAnimationFrame(() => {
-
-        const anchoLema = medirTexto(lema);
-        const anchoEstado = medirTexto(estado);
-
-        if (!anchoLema || !anchoEstado) {
-            return;
-        }
-
-        const tamañoBase = parseFloat(
-            window.getComputedStyle(estado).fontSize
-        );
-
-        const proporcion = Math.min(
-            1.55,
-            Math.max(.58,anchoLema / anchoEstado)
-        );
-
-        estado.style.fontSize =
-            `${tamañoBase * proporcion}px`;
-
-    });
-
+function medirReferencia(elemento, texto) {
+    const copia = elemento.cloneNode(false);
+    copia.removeAttribute("id");
+    copia.textContent = texto;
+    const estilo = getComputedStyle(elemento);
+    copia.style.cssText = `position:fixed;left:-10000px;top:0;visibility:hidden;width:max-content;max-width:none;white-space:nowrap;font:${estilo.font};letter-spacing:${estilo.letterSpacing};text-transform:${estilo.textTransform};`;
+    document.body.appendChild(copia);
+    const ancho = copia.getBoundingClientRect().width;
+    copia.remove();
+    return ancho;
 }
 
+function ajustarEstado() {
+    estado.style.fontSize = "";
+    requestAnimationFrame(() => {
+        const dormido = !radioHabitada;
+        const base = parseFloat(getComputedStyle(estado).fontSize);
+        const anchoLema = medirReferencia(lema, "La oreja que escucha la casa...");
+        const anchoEstado = medirReferencia(estado, dormido ? "DURMIENDO" : "SOÑANDO");
+        if (anchoEstado) estado.style.fontSize = `${base * Math.min(1.55, Math.max(.58, anchoLema / anchoEstado))}px`;
+    });
+}
 
 function ajustarTextoAlAncho(elemento) {
-
     elemento.style.fontSize = "";
-
-
-    const anchoDisponible = elemento.clientWidth;
-    const esTituloEnInstagram =
-        esNavegadorInstagram && elemento === titulo;
-
-    const anchoObjetivo =
-        esTituloEnInstagram
-            ? anchoDisponible * .94
-            : anchoDisponible;
-
-    const anchoReal =
-        esTituloEnInstagram
-            ? medirTexto(elemento)
-            : elemento.scrollWidth;
-
-
-    if (!anchoDisponible || !anchoReal || anchoReal <= anchoObjetivo) {
-
-        centrarTextoMedido(elemento);
-
-        return;
+    const referencia = elemento === titulo ? "ÚGJÜ RADIO" : "La oreja que escucha la casa...";
+    const disponible = elemento.clientWidth * (esNavegadorInstagram && elemento === titulo ? .94 : 1);
+    const real = medirReferencia(elemento, referencia);
+    if (disponible && real > disponible) {
+        elemento.style.fontSize = `${parseFloat(getComputedStyle(elemento).fontSize) * disponible / real}px`;
     }
-
-
-    const tamañoBase = parseFloat(
-        window.getComputedStyle(elemento).fontSize
-    );
-
-
-    elemento.style.fontSize =
-        `${tamañoBase * anchoObjetivo / anchoReal}px`;
-
     centrarTextoMedido(elemento);
-
 }
 
-
 function ajustarNotaCasa() {
-
     notaCasa.style.fontSize = "";
-
-
-    const anchoDisponible = notaCasa.clientWidth;
-
-    const anchoReal = Math.max(
-        notaCasaLineaUno.scrollWidth,
-        notaCasaLineaDos.scrollWidth
+    const real = Math.max(
+        medirReferencia(notaCasa, "esta casa no tiene horarios..."),
+        medirReferencia(notaCasa, "si no escuchás nada, volvé a pispear más tarde")
     );
-
-
-    if (!anchoDisponible || anchoReal <= anchoDisponible) {
-        return;
+    if (notaCasa.clientWidth && real > notaCasa.clientWidth) {
+        notaCasa.style.fontSize = `${parseFloat(getComputedStyle(notaCasa).fontSize) * notaCasa.clientWidth / real}px`;
     }
-
-
-    const tamañoBase = parseFloat(
-        window.getComputedStyle(notaCasa).fontSize
-    );
-
-
-    notaCasa.style.fontSize =
-        `${tamañoBase * anchoDisponible / anchoReal}px`;
-
 }
 
 
