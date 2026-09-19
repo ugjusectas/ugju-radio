@@ -70,6 +70,67 @@ let textosControlVivo = {
 
 const URL_VIVO =
     "https://s3.free-shoutcast.com/stream/18210/;stream.mp3";
+const URL_BACKUP_VIVO =
+    "https://eu8.fastcast4u.com/proxy/aphra/stream";
+let fuenteVivoActual = URL_VIVO;
+let principalDisponible = null;
+let backupDisponible = false;
+let generacionVivo = 0;
+let temporizadorInicioVivo = null;
+let ultimoAvanceVivo = 0;
+let ultimaPosicionVivo = -1;
+const fuentesFallidasVivo = new Map();
+
+// Una fuente que falla descansa un minuto. Nunca se cambia una escucha sana.
+function elegirFuenteVivo() {
+    const ahora = Date.now();
+    const fuentes = principalDisponible === false && backupDisponible
+        ? [URL_BACKUP_VIVO,URL_VIVO]
+        : [URL_VIVO,URL_BACKUP_VIVO];
+    return fuentes.find(url => (fuentesFallidasVivo.get(url) || 0) <= ahora)
+        || fuentes.slice().sort((a,b) =>
+            fuentesFallidasVivo.get(a) - fuentesFallidasVivo.get(b)
+        )[0];
+}
+
+function vivoSigueSonando() {
+    return !audioVivo.paused && !audioVivo.ended && !audioVivo.error &&
+        ultimoAvanceVivo > 0 && Date.now() - ultimoAvanceVivo < 15000;
+}
+
+// Comprueba que el navegador puede decodificar audio sin reproducirlo.
+// Se libera la conexión al resolver; no descarga el stream indefinidamente.
+function comprobarFuenteVivo(url) {
+    return new Promise(resolve => {
+        const prueba = new Audio();
+        const terminar = disponible => {
+            clearTimeout(limite);
+            prueba.oncanplay = prueba.onerror = null;
+            prueba.removeAttribute("src");
+            prueba.load();
+            resolve(disponible);
+        };
+        const limite = setTimeout(() => terminar(false),12000);
+        prueba.preload = "auto";
+        prueba.oncanplay = () => terminar(true);
+        prueba.onerror = () => terminar(false);
+        prueba.src = url;
+        prueba.load();
+    });
+}
+
+function fallarFuenteVivo() {
+    if (!escuchaVivoIniciadaPorUsuario || vivoDetenidoPorArchivo ||
+        temporizadorReconexionVivo) return;
+    fuentesFallidasVivo.set(fuenteVivoActual,Date.now() + 60000);
+    generacionVivo += 1;
+    clearTimeout(temporizadorInicioVivo);
+    clearTimeout(temporizadorEsperaVivo);
+    vivoConectando = false;
+    audioVivo.pause();
+    programarReconexionVivo(true);
+}
+
 const URL_METADATA_VIVO =
     "https://ugju-radio-metadata.ugjusectas.workers.dev/metadata";
 const INTERVALO_METADATA_VIVO = 30000;
@@ -407,6 +468,8 @@ function restaurarControlesVivo() {
 
 function detenerVivoParaArchivo() {
 
+    generacionVivo += 1;
+    clearTimeout(temporizadorInicioVivo);
     cancelarReconexionVivo(true);
     audioVivo.pause();
     vivoConectando = false;
@@ -476,8 +539,6 @@ function cancelarReconexionVivo(reiniciarContador = false) {
 function puedeReconectarVivo() {
 
     return escuchaVivoIniciadaPorUsuario &&
-        vivoIniciadoConExito &&
-        radioHabitada &&
         !vivoDetenidoPorArchivo &&
         navigator.onLine;
 
@@ -489,7 +550,6 @@ async function iniciarVivo(esReconexion = false) {
     if (
         !escuchaVivoIniciadaPorUsuario ||
         vivoDetenidoPorArchivo ||
-        !radioHabitada ||
         vivoConectando
     ) {
         return;
@@ -498,26 +558,32 @@ async function iniciarVivo(esReconexion = false) {
     cancelarReconexionVivo();
     vivoConectando = true;
 
-    if (!audioVivo.src) {
-        audioVivo.src = URL_VIVO;
-    }
-
-    if (esReconexion) {
-        audioVivo.load();
-        actualizarControlVivo(true);
+    const generacion = ++generacionVivo;
+    fuenteVivoActual = elegirFuenteVivo();
+    ocultarMetadatosVivo();
+    if (audioVivo.src !== fuenteVivoActual) {
+        audioVivo.src = fuenteVivoActual;
     } else {
-        actualizarControlVivo();
+        // Cada nueva escucha empieza en directo, sin recuperar búfer antiguo.
+        audioVivo.load();
     }
+    ultimoAvanceVivo = 0;
+    ultimaPosicionVivo = -1;
+    actualizarControlVivo(esReconexion);
+    clearTimeout(temporizadorInicioVivo);
+    temporizadorInicioVivo = setTimeout(() => {
+        if (generacion === generacionVivo) fallarFuenteVivo();
+    },20000);
 
     try {
         await audioVivo.play();
     } catch (error) {
-        vivoConectando = false;
-        if (vivoIniciadoConExito) {
-            programarReconexionVivo();
+        if (generacion !== generacionVivo) return;
+        if (error.name === "NotAllowedError") {
+            // La política de reproducción requiere otro gesto, no otro servidor.
+            detenerEscuchaVivo();
         } else {
-            escuchaVivoIniciadaPorUsuario = false;
-            actualizarControlVivo();
+            fallarFuenteVivo();
         }
     }
 
@@ -526,27 +592,14 @@ async function iniciarVivo(esReconexion = false) {
 
 function programarReconexionVivo(forzar = false) {
 
-    const interrupcionDeFondoSinError = document.hidden &&
-        !audioVivo.ended &&
-        !audioVivo.error;
-
-    if (interrupcionDeFondoSinError) {
-        cancelarReconexionVivo();
-        actualizarControlVivo();
-        return;
-    }
-
     if (vivoConectando) {
         actualizarControlVivo(true);
         return;
     }
 
-    const audioSigueActivo = !audioVivo.paused &&
-        !audioVivo.ended &&
-        !audioVivo.error &&
-        audioVivo.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA;
+    const audioSigueActivo = vivoSigueSonando();
 
-    if (!forzar && audioSigueActivo) {
+    if (forzar !== true && audioSigueActivo) {
         cancelarReconexionVivo();
         actualizarControlVivo();
         return;
@@ -568,6 +621,10 @@ function programarReconexionVivo(forzar = false) {
 
     temporizadorReconexionVivo = setTimeout(() => {
         temporizadorReconexionVivo = null;
+        if (vivoSigueSonando()) {
+            actualizarControlVivo();
+            return;
+        }
         iniciarVivo(true);
     },retraso);
 
@@ -576,24 +633,18 @@ function programarReconexionVivo(forzar = false) {
 
 function vigilarEsperaVivo() {
 
-    clearTimeout(temporizadorEsperaVivo);
-
+    if (vivoConectando || temporizadorEsperaVivo) return;
+    const posicion = audioVivo.currentTime;
     temporizadorEsperaVivo = setTimeout(() => {
         temporizadorEsperaVivo = null;
-
-        // La primera conexión de FreeSHOUTcast puede tardar varios segundos.
-        // No la convertimos en una falsa reconexión ni iniciamos otra carga en
-        // paralelo: el mismo play sigue esperando hasta el evento playing.
-        if (!vivoIniciadoConExito) {
-            actualizarControlVivo();
-            return;
+        if (!vivoSigueSonando() && audioVivo.currentTime === posicion) {
+            fallarFuenteVivo();
+        } else if (escuchaVivoIniciadaPorUsuario && !audioVivo.paused) {
+            vigilarEsperaVivo();
         }
-
-        programarReconexionVivo(true);
-    },10000);
+    },15000);
 
 }
-
 
 function alternarVivo() {
 
@@ -618,6 +669,8 @@ function detenerEscuchaVivo() {
     escuchaVivoIniciadaPorUsuario = false;
     vivoIniciadoConExito = false;
     vivoConectando = false;
+    generacionVivo += 1;
+    clearTimeout(temporizadorInicioVivo);
     cancelarReconexionVivo(true);
     audioVivo.pause();
     actualizarControlVivo();
@@ -643,8 +696,6 @@ function actualizarEstadoRadioVivo(estaHabitada) {
 
     if (!radioHabitada) {
         ocultarMetadatosVivo();
-        vivoConectando = false;
-        cancelarReconexionVivo(true);
         actualizarControlVivo();
         return;
     }
@@ -726,6 +777,7 @@ function actualizarMetadatosMultimediaVivo(tituloActual) {
 async function comprobarMetadatosVivo() {
 
     if (
+        fuenteVivoActual !== URL_VIVO ||
         !radioHabitada ||
         !escuchaVivoIniciadaPorUsuario ||
         audioVivo.paused ||
@@ -745,6 +797,7 @@ async function comprobarMetadatosVivo() {
         }
 
         const datos = await respuesta.json();
+        if (fuenteVivoActual !== URL_VIVO || audioVivo.paused) return;
         const tituloActual = typeof datos.title === "string"
             ? datos.title.trim()
             : "";
@@ -1206,7 +1259,21 @@ window.addEventListener("resize",ajustarDesplazamientoTituloArchivo);
 window.addEventListener("resize",ajustarDesplazamientoMetadatosVivo);
 
 
+audioVivo.addEventListener("timeupdate",() => {
+    if (!audioVivo.paused && audioVivo.currentTime !== ultimaPosicionVivo) {
+        ultimaPosicionVivo = audioVivo.currentTime;
+        ultimoAvanceVivo = Date.now();
+    }
+});
+
 audioVivo.addEventListener("playing",() => {
+    if (!escuchaVivoIniciadaPorUsuario || vivoDetenidoPorArchivo) {
+        audioVivo.pause();
+        return;
+    }
+    clearTimeout(temporizadorInicioVivo);
+    ultimoAvanceVivo = Date.now();
+    fuentesFallidasVivo.delete(fuenteVivoActual);
     if (!vivoIniciadoConExito) {
         window.observarUgju?.("live_play");
     }
@@ -1233,14 +1300,15 @@ audioVivo.addEventListener("pause",() => {
     actualizarControlVivo();
 });
 
-["error","stalled","abort","ended"].forEach(tipo => {
+["error","ended"].forEach(tipo => {
     audioVivo.addEventListener(
         tipo,
-        () => programarReconexionVivo(true)
+        fallarFuenteVivo
     );
 });
 
 audioVivo.addEventListener("waiting",vigilarEsperaVivo);
+audioVivo.addEventListener("stalled",vigilarEsperaVivo);
 
 audioVivo.addEventListener("canplay",() => {
     clearTimeout(temporizadorEsperaVivo);
@@ -1753,17 +1821,28 @@ cargarIdioma(idioma)
                 throw new Error("Radio status was incomplete");
             }
 
-            actualizarEstadoRadioVivo(datos.online);
-            mostrarEstado(
-                datos.online
-                    ? textos.state_living
-                    : textos.state_sleeping
-            );
+            principalDisponible = datos.online;
         } catch (error) {
-            actualizarEstadoRadioVivo(false);
-            mostrarEstado(textos.state_sleeping);
+            // Si falla sólo el servicio de estado, aún se puede escuchar audio.
+            principalDisponible = null;
         } finally {
             clearTimeout(espera);
+        }
+
+        try {
+            if (!vivoSigueSonando()) {
+                if (principalDisponible === null) {
+                    principalDisponible = await comprobarFuenteVivo(URL_VIVO);
+                }
+                if (!principalDisponible) {
+                    backupDisponible = await comprobarFuenteVivo(URL_BACKUP_VIVO);
+                }
+            }
+            const disponible = vivoSigueSonando() ||
+                principalDisponible === true || backupDisponible;
+            actualizarEstadoRadioVivo(disponible);
+            mostrarEstado(disponible ? textos.state_living : textos.state_sleeping);
+        } finally {
             comprobacionRadioEnCurso = false;
         }
 
