@@ -131,6 +131,8 @@ function fallarFuenteVivo() {
     programarReconexionVivo(true);
 }
 
+const URL_METADATA_BACKUP_VIVO =
+    "https://eu8.fastcast4u.com/rpc/aphra/streaminfo.get";
 const URL_METADATA_VIVO =
     "https://ugju-radio-metadata.ugjusectas.workers.dev/metadata";
 const INTERVALO_METADATA_VIVO = 30000;
@@ -777,7 +779,6 @@ function actualizarMetadatosMultimediaVivo(tituloActual) {
 async function comprobarMetadatosVivo() {
 
     if (
-        fuenteVivoActual !== URL_VIVO ||
         !radioHabitada ||
         !escuchaVivoIniciadaPorUsuario ||
         audioVivo.paused ||
@@ -787,32 +788,54 @@ async function comprobarMetadatosVivo() {
         return;
     }
 
+    const fuente = fuenteVivoActual;
+    const generacion = generacionVivo;
+    const esBackup = fuente === URL_BACKUP_VIVO;
+    const sigueVigente = () => fuenteVivoActual === fuente &&
+        generacionVivo === generacion && !audioVivo.paused &&
+        escuchaVivoIniciadaPorUsuario && !entradaArchivoActual;
+    const controlador = new AbortController();
+    const limite = setTimeout(() => controlador.abort(),10000);
+
     try {
-        const respuesta = await fetch(URL_METADATA_VIVO,{
-            cache:"no-store"
-        });
+        const respuesta = await fetch(
+            esBackup ? URL_METADATA_BACKUP_VIVO : URL_METADATA_VIVO,
+            {cache:"no-store",signal:controlador.signal}
+        );
 
         if (!respuesta.ok) {
             throw new Error("Metadata unavailable");
         }
 
         const datos = await respuesta.json();
-        if (fuenteVivoActual !== URL_VIVO || audioVivo.paused) return;
-        const tituloActual = typeof datos.title === "string"
-            ? datos.title.trim()
-            : "";
+        if (!sigueVigente()) return;
+        const estacion = esBackup ? datos.data?.[0] : datos;
+        const titulo = esBackup
+            ? estacion?.rawmeta || estacion?.song
+            : estacion?.title;
+        const online = esBackup
+            ? datos.type === "result" && estacion?.offline === false
+            : estacion?.online;
+        const tituloActual = typeof titulo === "string" ? titulo.trim() : "";
 
-        if (!datos.online || !tituloActual) {
+        if (!online || !tituloActual) {
             ocultarMetadatosVivo();
+            actualizarMetadatosMultimediaVivo("");
             return;
         }
 
+        // Sólo texto del servidor que se escucha, nunca HTML de la API.
         pistaMetadatosVivo.textContent = tituloActual;
         metadatosVivo.hidden = false;
         requestAnimationFrame(ajustarDesplazamientoMetadatosVivo);
         actualizarMetadatosMultimediaVivo(tituloActual);
     } catch (error) {
-        ocultarMetadatosVivo();
+        if (sigueVigente()) {
+            ocultarMetadatosVivo();
+            actualizarMetadatosMultimediaVivo("");
+        }
+    } finally {
+        clearTimeout(limite);
     }
 
 }
