@@ -145,11 +145,9 @@ body.uri-inverted.uri-memory::after{animation:uri-memory-light 1.05s linear}
 @media(max-height:650px){.fire[data-fire="klotski"] .klotski,.fire[data-fire="connectfour"] .connect-four,.fire[data-fire="object"] .tetris-field,.fire[data-fire="tower"] .peg-solitaire,.fire[data-fire="hanoi"] .hanoi{width:min(82vw,46dvh)}}
 
 /* URI puede retirarse por completo: primero deja una sombra y luego vuelve sin perder su interacción. */
-.uri-cat::after{content:"";position:absolute;left:14%;right:14%;bottom:4%;height:13%;border-radius:50%;background:rgba(234,82,243,.42);filter:blur(12px);opacity:0;transform:scale(.72);transition:opacity 1.15s ease,transform 1.15s ease;pointer-events:none}
 .uri-cat.is-shadow{opacity:1}
 .uri-cat-image{transition:opacity .9s ease}
 .uri-cat.is-shadow .uri-cat-image{opacity:0}
-.uri-cat.is-shadow::after{opacity:.78;transform:scale(1)}
 .uri-cat.is-absent{opacity:0;visibility:hidden;pointer-events:none}
 
 /* Disolución es una experiencia cerrada hasta que la secuencia devuelve a la Casa. */
