@@ -192,8 +192,10 @@ document.body.addEventListener("animationend",e=>{if(e.animationName==="uri-memo
 // Pointer Events unifica pantalla táctil, mouse y trackpad (estos dos últimos llegan como "mouse").
 gatoUri.onpointerdown=e=>{if(e.isPrimary===false||e.button>0)return;contactoUri=true;gatoUri.classList.add("is-purring");gatoUri.setPointerCapture?.(e.pointerId);acariciarUri(e);sostenerVibracionUri(e)};
 
-gatoUri.onpointermove=e=>{if(contactoUri&&(e.buttons!==0||e.pointerType==="touch"))mostrarRonroneoUri()};
-gatoUri.onpointerup=e=>{finalizarCariciaUri(e);if(e.pointerType==="touch"||e.pointerType==="pen")navigator.vibrate?.([55,30,55,30,75])};
+gatoUri.onpointermove=e=>{if(contactoUri&&(e.buttons!==0||e.pointerType==="touch")){mostrarRonroneoUri();feedbackUri(e);sostenerVibracionUri(e)}};
+gatoUri.onpointerup=e=>{finalizarCariciaUri(e);if(e.pointerType==="pen")navigator.vibrate?.([55,30,55,30,75])};
+// touchend es un gesto de activación reconocido por los navegadores móviles.
+gatoUri.addEventListener("touchend",()=>{navigator.vibrate?.([55,30,55,30,75])},{passive:true});
 gatoUri.onpointercancel=finalizarCariciaUri;
 gatoUri.onclick=e=>{if(e.detail===0&&!contactoUri){acariciarUri(e);esperaUri=setTimeout(()=>finalizarCariciaUri(),4200)}};
 

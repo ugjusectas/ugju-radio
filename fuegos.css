@@ -175,3 +175,7 @@ body.world-dissolving:not(.dissolution-started) .back-link{z-index:30;pointer-ev
 /* URI: recorridos aleatorios originales con transiciones delicadas. */
 .uri-cat,.uri-cat.is-petted,.uri-cat.is-purring,.uri-cat.is-touching{transform-origin:50% 34%;transition:left var(--uri-flow,12s) cubic-bezier(.37,0,.63,1),top var(--uri-flow,12s) cubic-bezier(.37,0,.63,1),transform var(--uri-flow,12s) cubic-bezier(.37,0,.63,1),opacity 4s ease-in-out,filter 3s ease-in-out}
 .uri-cat.is-absent{opacity:0;visibility:hidden;pointer-events:none}
+
+/* El zoom de URI no crea una superficie desplazable. */
+.fire.fire-uri{overflow:clip;scrollbar-width:none}
+.fire.fire-uri::-webkit-scrollbar{display:none}
