@@ -169,3 +169,11 @@ body.world-dissolving:not(.dissolution-started) .back-link{z-index:30;pointer-ev
 .fire{overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
 .fire h1{max-width:100%;overflow-wrap:anywhere}
 .rebirth-words{max-height:28dvh;overflow-y:auto;pointer-events:auto}
+
+/* Caricia de URI: crecimiento continuo, sin sacudidas ni halo amplificado por el zoom. */
+.uri-cat.is-petted,.uri-cat.is-purring,.uri-cat.is-touching{animation:none;transform:translate(-50%,-50%) scale(var(--uri-scale,1));background:transparent;transition:left 4s cubic-bezier(.22,.61,.36,1),top 4s cubic-bezier(.22,.61,.36,1),transform 4s cubic-bezier(.22,.61,.36,1),opacity 1.6s ease,filter 1.6s ease;filter:drop-shadow(0 0 calc(16px / var(--uri-scale,1)) rgba(234,82,243,.55))}
+.uri-cat.is-petted .uri-cat-image{background:transparent;opacity:.86}
+
+/* URI: recorridos aleatorios originales con transiciones delicadas. */
+.uri-cat,.uri-cat.is-petted,.uri-cat.is-purring,.uri-cat.is-touching{transform-origin:50% 34%;transition:left var(--uri-flow,12s) cubic-bezier(.37,0,.63,1),top var(--uri-flow,12s) cubic-bezier(.37,0,.63,1),transform var(--uri-flow,12s) cubic-bezier(.37,0,.63,1),opacity 4s ease-in-out,filter 3s ease-in-out}
+.uri-cat.is-absent{opacity:0;visibility:hidden;pointer-events:none}
