@@ -174,30 +174,82 @@ campoObjeto.onpointerup=()=>{if(!gestoTetris)return;if(finTetris)prepararObjeto(
 campoObjeto.onpointercancel=()=>{gestoTetris=null;campoObjeto.classList.remove("is-dragging")};
 
 // Uri: cabeza y cola, presencia guardiana que aparece y se desvanece.
-const campoUri=document.querySelector('[data-firepiece="uri"]'),gatoUri=campoUri.querySelector(".uri-cat"),ronroneoUri=document.querySelector('[data-fire="uri"] .uri-purr');let esperaUri,esperaRonroneoUri,ultimoFeedbackUri=0,ultimaMemoriaUri=0,ultimaInteraccionUri=0,ultimaHuellaUri=0,contactoUri=false,vibracionUri=null,estadoCariciaUri=null;
+const campoUri=document.querySelector('[data-firepiece="uri"]'),gatoUri=campoUri.querySelector(".uri-cat"),ronroneoUri=document.querySelector('[data-fire="uri"] .uri-purr');let esperaUri,esperaRonroneoUri,ultimoFeedbackUri=0,ultimaMemoriaUri=0,ultimaInteraccionUri=0,ultimaHuellaUri=0,contactoUri=false,vibracionUri=null,estadoCariciaUri=null,punteroUri=null,ultimaReaccionUri=-1;
 function escalaAleatoriaUri(){const azar=Math.random();if(azar<.18)return 1.85+Math.random()*.8;if(azar<.48)return .5+Math.random()*.34;return .92+Math.random()*.58}
-function moverUri(){if(fuegoActual!=="uri"||contactoUri)return;gatoUri.style.setProperty("--uri-flow",`${6500+Math.random()*4000}ms`);const x=18+Math.random()*64,y=20+Math.random()*58,rapido=false,desaparece=Math.random()<.3,escala=escalaAleatoriaUri();gatoUri.style.setProperty("--uri-x",`${x}%`);gatoUri.style.setProperty("--uri-y",`${y}%`);gatoUri.style.setProperty("--uri-scale",escala.toFixed(2));gatoUri.style.setProperty("--uri-speed",rapido?".55s":`${2.8+Math.random()*2.2}s`);gatoUri.classList.add("is-vanishing");clearTimeout(esperaUri);if(desaparece){gatoUri.classList.add("is-shadow");esperaUri=setTimeout(()=>{gatoUri.classList.remove("is-shadow");gatoUri.classList.add("is-absent");esperaUri=setTimeout(()=>{if(fuegoActual!=="uri"||contactoUri)return;gatoUri.style.setProperty("--uri-flow",`${6500+Math.random()*4000}ms`);gatoUri.classList.remove("is-absent","is-vanishing");esperaUri=setTimeout(moverUri,4500+Math.random()*4500)},2200+Math.random()*1800)},3200+Math.random()*1800);return}esperaUri=setTimeout(()=>{gatoUri.classList.remove("is-vanishing");esperaUri=setTimeout(moverUri,rapido?900:5500+Math.random()*5000)},rapido?300:2800+Math.random()*1800)}
+// Limita también el rectángulo transformado, conservando el origen visual actual.
+function colocarUri(x,y,escala){
+ const r=campoUri.getBoundingClientRect(),w=gatoUri.offsetWidth,h=gatoUri.offsetHeight;
+ const izquierda=Math.max(r.left,0)+8,derecha=Math.min(r.right,innerWidth)-8;
+ const arriba=Math.max(r.top,0)+8,abajo=Math.min(r.bottom,innerHeight)-8;
+ if(!w||!h||derecha<=izquierda||abajo<=arriba)return;
+ escala=Math.max(.01,Math.min(Math.max(escala,44/w,44/h),(derecha-izquierda)/w,(abajo-arriba)/h));
+ x=Math.max(izquierda+w*escala/2,Math.min(derecha-w*escala/2,x));
+ y=Math.max(arriba+h*escala/2,Math.min(abajo-h*escala/2,y));
+ gatoUri.style.setProperty("--uri-x",`${x-r.left}px`);
+ gatoUri.style.setProperty("--uri-y",`${y-r.top+h*.16*(1-escala)}px`);
+ gatoUri.style.setProperty("--uri-scale",String(escala));
+}
+function moverUri(){
+ if(fuegoActual!=="uri"||contactoUri)return;
+ const r=campoUri.getBoundingClientRect();
+ gatoUri.style.setProperty("--uri-flow",`${6500+Math.random()*4000}ms`);
+ colocarUri(r.left+r.width*(.18+Math.random()*.64),r.top+r.height*(.2+Math.random()*.58),escalaAleatoriaUri());
+ gatoUri.classList.remove("is-shadow","is-absent","is-vanishing");
+ clearTimeout(esperaUri);esperaUri=setTimeout(moverUri,8500+Math.random()*4500);
+}
 function ocultarRonroneoUri(){clearTimeout(esperaRonroneoUri);ronroneoUri.classList.remove("is-visible");ronroneoUri.setAttribute("aria-hidden","true")}
 function mostrarRonroneoUri(){clearTimeout(esperaRonroneoUri);ronroneoUri.classList.add("is-visible");ronroneoUri.setAttribute("aria-hidden","false")}
 function prolongarRonroneoUri(){clearTimeout(esperaRonroneoUri);esperaRonroneoUri=setTimeout(ocultarRonroneoUri,1800)}
-function detenerVibracionUri(){clearInterval(vibracionUri);vibracionUri=null;navigator.vibrate?.(0)}
-function sostenerVibracionUri(e){if(e?.pointerType==="mouse"||vibracionUri||typeof navigator.vibrate!=="function")return;const pulso=()=>navigator.vibrate?.([55,30,55,30,75]);pulso();vibracionUri=setInterval(pulso,270)}
-function finalizarCariciaUri(e){contactoUri=false;gatoUri.style.setProperty("--uri-flow","6000ms");detenerVibracionUri();gatoUri.classList.remove("is-purring","is-touching");prolongarRonroneoUri();clearTimeout(esperaUri);if(estadoCariciaUri){gatoUri.style.setProperty("--uri-x",estadoCariciaUri.x);gatoUri.style.setProperty("--uri-y",estadoCariciaUri.y);gatoUri.style.setProperty("--uri-scale",estadoCariciaUri.escala);estadoCariciaUri=null;}esperaUri=setTimeout(()=>{gatoUri.classList.remove("is-petted");moverUri()},6200);if(e&&gatoUri.hasPointerCapture?.(e.pointerId))gatoUri.releasePointerCapture(e.pointerId)}
-function prepararUri(){estadoCariciaUri=null;clearTimeout(esperaUri);clearTimeout(esperaRonroneoUri);detenerVibracionUri();contactoUri=false;ocultarRonroneoUri();document.body.classList.remove("uri-memory");gatoUri.classList.remove("is-vanishing","is-shadow","is-absent","is-petted","is-touching","is-purring");moverUri()}
-function feedbackUri(e){const ahora=performance.now();gatoUri.classList.remove("is-touching");void gatoUri.offsetWidth;gatoUri.classList.add("is-touching");if(!vibracionUri&&e?.pointerType!=="mouse"&&ahora-ultimoFeedbackUri>140){navigator.vibrate?.([18,24,18]);ultimoFeedbackUri=ahora}}
+function vibrarUri(patron){try{return typeof navigator.vibrate==="function"&&navigator.vibrate(patron)}catch{return false}}
+function detenerVibracionUri(){clearInterval(vibracionUri);vibracionUri=null;vibrarUri(0)}
+function sostenerVibracionUri(e){
+ if(!["touch","pen"].includes(e?.pointerType)||vibracionUri!==null)return;
+ const pulso=()=>{if(fuegoActual!=="uri"||!contactoUri){detenerVibracionUri();return false}return vibrarUri([55,30,55,30,75])};
+ if(pulso())vibracionUri=setInterval(pulso,300);
+}
+function finalizarCariciaUri(e){
+ if(e&&e.pointerId!==punteroUri)return;
+ if(!contactoUri&&!estadoCariciaUri)return;
+ contactoUri=false;const id=punteroUri;punteroUri=null;detenerVibracionUri();
+ gatoUri.classList.remove("is-purring","is-touching");prolongarRonroneoUri();clearTimeout(esperaUri);
+ // Deja ver incluso un toque breve antes de volver suavemente.
+ const volver=()=>{gatoUri.style.setProperty("--uri-flow","700ms");if(estadoCariciaUri){colocarUri(estadoCariciaUri.x,estadoCariciaUri.y,estadoCariciaUri.escala);estadoCariciaUri=null}gatoUri.classList.remove("is-petted");esperaUri=setTimeout(moverUri,1600)};
+ esperaUri=setTimeout(volver,e?.type==="pointercancel"?0:Math.max(0,240-(performance.now()-ultimaInteraccionUri)));
+ if(id!==null&&gatoUri.hasPointerCapture?.(id))gatoUri.releasePointerCapture(id);
+}
+function prepararUri(){punteroUri=null;estadoCariciaUri=null;clearTimeout(esperaUri);clearTimeout(esperaRonroneoUri);detenerVibracionUri();contactoUri=false;ocultarRonroneoUri();document.body.classList.remove("uri-memory");gatoUri.classList.remove("is-vanishing","is-shadow","is-absent","is-petted","is-touching","is-purring");moverUri()}
+function feedbackUri(e){const ahora=performance.now();gatoUri.classList.remove("is-touching");void gatoUri.offsetWidth;gatoUri.classList.add("is-touching");if(!vibracionUri&&e?.pointerType!=="mouse"&&ahora-ultimoFeedbackUri>140){vibrarUri([18,24,18]);ultimoFeedbackUri=ahora}}
 function iluminarMemoriaUri(){const ahora=performance.now();if(ahora-ultimaMemoriaUri<900)return;ultimaMemoriaUri=ahora;document.body.classList.remove("uri-memory");void document.body.offsetWidth;document.body.classList.add("uri-memory")}
-function acariciarUri(e){if(e)e.preventDefault();if(!estadoCariciaUri)estadoCariciaUri={x:gatoUri.style.getPropertyValue("--uri-x"),y:gatoUri.style.getPropertyValue("--uri-y"),escala:gatoUri.style.getPropertyValue("--uri-scale")};const ancho=gatoUri.offsetWidth,alto=gatoUri.offsetHeight,campo=campoUri.getBoundingClientRect(),escalaPantalla=Math.max(innerWidth/(Math.max(ancho,1)*.28),innerHeight/(Math.max(alto,1)*.20));const escala=escalaPantalla*(.22+Math.pow(Math.random(),1.3)*.78);gatoUri.style.setProperty("--uri-flow",`${4500+Math.random()*2500}ms`);gatoUri.style.transformOrigin="50% 34%";gatoUri.style.setProperty("--uri-x",`${innerWidth/2-campo.left}px`);gatoUri.style.setProperty("--uri-y",`${innerHeight/2-campo.top+alto*.16}px`);gatoUri.style.setProperty("--uri-scale",escala.toFixed(2));const ahora=performance.now();ultimaInteraccionUri=ahora;if(ahora-ultimaHuellaUri>15000){window.observarUgju?.("uri_pet","uri");ultimaHuellaUri=ahora}feedbackUri(e);iluminarMemoriaUri();mostrarRonroneoUri();clearTimeout(esperaUri);gatoUri.classList.remove("is-vanishing","is-shadow","is-absent");gatoUri.classList.add("is-petted");}
+function acariciarUri(e){
+ if(e)e.preventDefault();
+ const r=gatoUri.getBoundingClientRect(),campo=campoUri.getBoundingClientRect();
+ const actual=r.width/Math.max(1,gatoUri.offsetWidth),x=r.left+r.width/2,y=r.top+r.height/2;
+ estadoCariciaUri={x,y,escala:actual};
+ // Sorteo independiente, excluyendo únicamente la reacción inmediatamente anterior.
+ const opciones=[0,1,2,3].filter(n=>n!==ultimaReaccionUri),reaccion=opciones[Math.floor(Math.random()*opciones.length)];ultimaReaccionUri=reaccion;
+ let escala=actual,dx=0,dy=0;
+ if(reaccion===0)escala=Math.max(1.65,actual*(1.35+Math.random()*.45));
+ if(reaccion===1)escala=Math.max(.55,actual*(.45+Math.random()*.2));
+ if(reaccion>=2){const angulo=Math.random()*Math.PI*2,distancia=Math.min(campo.width,campo.height)*(.22+Math.random()*.2);dx=Math.cos(angulo)*distancia;dy=Math.sin(angulo)*distancia;escala=reaccion===2?Math.min(actual,1.1):.65+Math.random()*.7}
+ gatoUri.style.setProperty("--uri-flow",`${140+Math.random()*100}ms`);
+ colocarUri(x+dx,y+dy,escala);
+ const ahora=performance.now();ultimaInteraccionUri=ahora;if(ahora-ultimaHuellaUri>15000){window.observarUgju?.("uri_pet","uri");ultimaHuellaUri=ahora}
+ feedbackUri(e);iluminarMemoriaUri();mostrarRonroneoUri();clearTimeout(esperaUri);
+ gatoUri.classList.remove("is-vanishing","is-shadow","is-absent");gatoUri.classList.add("is-petted");
+}
 gatoUri.onanimationend=e=>{if(e.animationName==="uri-touch-pulse")gatoUri.classList.remove("is-touching")};
 document.body.addEventListener("animationend",e=>{if(e.animationName==="uri-memory-light")document.body.classList.remove("uri-memory")});
 // Pointer Events unifica pantalla táctil, mouse y trackpad (estos dos últimos llegan como "mouse").
-gatoUri.onpointerdown=e=>{if(e.isPrimary===false||e.button>0)return;contactoUri=true;gatoUri.classList.add("is-purring");gatoUri.setPointerCapture?.(e.pointerId);acariciarUri(e);sostenerVibracionUri(e)};
-
-gatoUri.onpointermove=e=>{if(contactoUri&&(e.buttons!==0||e.pointerType==="touch")){mostrarRonroneoUri();feedbackUri(e);sostenerVibracionUri(e)}};
-gatoUri.onpointerup=e=>{finalizarCariciaUri(e);if(e.pointerType==="pen")navigator.vibrate?.([55,30,55,30,75])};
-// touchend es un gesto de activación reconocido por los navegadores móviles.
-gatoUri.addEventListener("touchend",()=>{navigator.vibrate?.([55,30,55,30,75])},{passive:true});
+gatoUri.onpointerdown=e=>{if(e.isPrimary===false||e.button>0||contactoUri)return;punteroUri=e.pointerId;contactoUri=true;gatoUri.classList.add("is-purring");gatoUri.setPointerCapture?.(e.pointerId);acariciarUri(e);sostenerVibracionUri(e)};
+gatoUri.onpointermove=e=>{if(contactoUri&&e.pointerId===punteroUri){mostrarRonroneoUri();sostenerVibracionUri(e)}};
+// pointerup ya cuenta como activación táctil incluso en el primer contacto.
+gatoUri.onpointerup=e=>{if(e.pointerId!==punteroUri)return;finalizarCariciaUri(e);if(["touch","pen"].includes(e.pointerType))vibrarUri([55,30,55,30,75])};
 gatoUri.onpointercancel=finalizarCariciaUri;
-gatoUri.onclick=e=>{if(e.detail===0&&!contactoUri){acariciarUri(e);esperaUri=setTimeout(()=>finalizarCariciaUri(),4200)}};
+gatoUri.onlostpointercapture=e=>{if(contactoUri)finalizarCariciaUri(e)};
+gatoUri.onclick=e=>{if(e.detail===0&&!contactoUri){acariciarUri(e);esperaUri=setTimeout(()=>finalizarCariciaUri(),350)}};
+window.addEventListener("blur",()=>finalizarCariciaUri());
+document.addEventListener("visibilitychange",()=>{if(document.hidden)finalizarCariciaUri()});
+window.addEventListener("resize",()=>{if(fuegoActual!=="uri")return;finalizarCariciaUri();clearTimeout(esperaUri);estadoCariciaUri=null;gatoUri.style.setProperty("--uri-flow","0ms");const r=campoUri.getBoundingClientRect();colocarUri(r.left+r.width/2,r.top+r.height/2,1);esperaUri=setTimeout(moverUri,1600)});
 
 // Sin nombre: cada toque apaga luz, sonido y acción hasta que sólo queda el regreso.
 const campoDisolucion=document.querySelector('[data-firepiece="dissolution"]'),veloDisolucion=campoDisolucion.querySelector(".dissolution-veil"),marcasDisolucion=campoDisolucion.querySelector(".dissolution-marks");let toquesDisolucion=0,disolucionIniciada=false,terminoDisolucion=false,esperaRenacer=[];
