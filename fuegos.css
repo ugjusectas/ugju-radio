@@ -8,6 +8,7 @@ body.uri-inverted{background:#111;color:#EA52F3}body.uri-inverted::before{backgr
 body::before{content:"";position:fixed;inset:-18vmax;background:radial-gradient(ellipse at 28% 38%,rgba(255,255,255,.1),transparent 51%),radial-gradient(ellipse at 72% 64%,rgba(87,0,94,.07),transparent 54%);pointer-events:none}
 body.uri-inverted::after{content:"";position:fixed;z-index:0;inset:0;background:#fff;opacity:0;pointer-events:none}
 body.uri-inverted.uri-memory::after{animation:uri-memory-light 1.05s linear}
+body.uri-inverted.uri-memory.uri-holding::after{animation-iteration-count:infinite}
 @keyframes uri-memory-light{0%,100%{opacity:0}7%{opacity:.96}13%{opacity:0}28%{opacity:.78}35%{opacity:0}57%{opacity:.9}65%{opacity:0}82%{opacity:.52}88%{opacity:0}}
 .house{position:relative;z-index:1;height:100vh;height:100dvh;overflow:hidden;overscroll-behavior-x:none;touch-action:pan-y}
 .house .house-actions-fixed{top:auto;right:auto;bottom:max(16px,env(safe-area-inset-bottom));left:max(28px,calc(env(safe-area-inset-left) + 14px))}

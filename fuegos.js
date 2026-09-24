@@ -184,9 +184,13 @@ function colocarUri(x,y,escala,ampliar=false){
  const izquierda=Math.max(r.left-margen,12)+8,derecha=Math.min(r.right+margen,innerWidth-12)-8;
  const arriba=Math.max(r.top-margen,72)+8,abajo=Math.min(r.bottom+margen,innerHeight-100)-8;
  if(!w||!h||derecha<=izquierda||abajo<=arriba)return;
- escala=Math.max(.01,Math.min(Math.max(escala,44/w,44/h),(derecha-izquierda)/w,(abajo-arriba)/h));
+ // El agigantamiento puede desbordar el campo, como la caricia original.
+ // El centro sigue accesible; las demás reacciones conservan sus límites.
+ escala=ampliar?Math.min(8,escala):Math.max(.01,Math.min(Math.max(escala,44/w,44/h),(derecha-izquierda)/w,(abajo-arriba)/h));
+ if(ampliar){x=r.left+r.width/2;y=r.top+r.height/2}else{
  x=Math.max(izquierda+w*escala/2,Math.min(derecha-w*escala/2,x));
  y=Math.max(arriba+h*escala/2,Math.min(abajo-h*escala/2,y));
+ }
  gatoUri.style.setProperty("--uri-x",`${x-r.left}px`);
  gatoUri.style.setProperty("--uri-y",`${y-r.top+h*.16*(1-escala)}px`);
  gatoUri.style.setProperty("--uri-scale",String(escala));
@@ -214,6 +218,7 @@ function sostenerVibracionUri(e){
 function finalizarCariciaUri(e){
  if(e&&e.pointerId!==punteroUri)return;
  if(!contactoUri&&!estadoCariciaUri)return;
+ document.body.classList.remove("uri-memory","uri-holding");
  contactoUri=false;const id=punteroUri;punteroUri=null;detenerVibracionUri();
  gatoUri.classList.remove("is-purring","is-touching");prolongarRonroneoUri();clearTimeout(esperaUri);
  // Deja ver incluso un toque breve antes de volver suavemente.
@@ -221,19 +226,19 @@ function finalizarCariciaUri(e){
  esperaUri=setTimeout(volver,e?.type==="pointercancel"?0:Math.max(0,650-(performance.now()-ultimaInteraccionUri)));
  if(id!==null&&gatoUri.hasPointerCapture?.(id))gatoUri.releasePointerCapture(id);
 }
-function prepararUri(){punteroUri=null;estadoCariciaUri=null;clearTimeout(esperaUri);clearTimeout(esperaRonroneoUri);detenerVibracionUri();contactoUri=false;ocultarRonroneoUri();document.body.classList.remove("uri-memory");gatoUri.classList.remove("is-vanishing","is-shadow","is-absent","is-petted","is-touching","is-purring");moverUri()}
+function prepararUri(){finalizarCariciaUri();punteroUri=null;estadoCariciaUri=null;clearTimeout(esperaUri);clearTimeout(esperaRonroneoUri);detenerVibracionUri();contactoUri=false;ocultarRonroneoUri();document.body.classList.remove("uri-memory","uri-holding");gatoUri.classList.remove("is-vanishing","is-shadow","is-absent","is-petted","is-touching","is-purring");moverUri()}
 function feedbackUri(){gatoUri.classList.remove("is-touching");void gatoUri.offsetWidth;gatoUri.classList.add("is-touching")}
-function iluminarMemoriaUri(){const ahora=performance.now();if(ahora-ultimaMemoriaUri<900)return;ultimaMemoriaUri=ahora;document.body.classList.remove("uri-memory");void document.body.offsetWidth;document.body.classList.add("uri-memory")}
+function iluminarMemoriaUri(){document.body.classList.remove("uri-memory","uri-holding");void document.body.offsetWidth;document.body.classList.add("uri-memory");if(contactoUri)document.body.classList.add("uri-holding")}
 function acariciarUri(e){
  // touch-action:none y pointer capture gestionan el gesto sin cancelar su activación nativa.
  const r=gatoUri.getBoundingClientRect(),campo=campoUri.getBoundingClientRect();
  const actual=r.width/Math.max(1,gatoUri.offsetWidth),x=r.left+r.width/2,y=r.top+r.height/2;
  estadoCariciaUri={x,y,escala:actual};
- // Bolsa aleatoria: dos ampliaciones, un encogimiento y un salto cada cuatro contactos.
- if(!reaccionesUri.length){reaccionesUri=[0,0,1,2];for(let i=3;i>0;i--){const j=Math.floor(Math.random()*(i+1));[reaccionesUri[i],reaccionesUri[j]]=[reaccionesUri[j],reaccionesUri[i]]}}
+ // Bolsa aleatoria: 50% agigantamiento; también encogimiento, salto y escape.
+ if(!reaccionesUri.length){reaccionesUri=[0,0,0,1,2,3];for(let i=reaccionesUri.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[reaccionesUri[i],reaccionesUri[j]]=[reaccionesUri[j],reaccionesUri[i]]}}
  const reaccion=reaccionesUri.pop();ultimaReaccionUri=reaccion;
  let escala=actual,dx=0,dy=0;
- if(reaccion===0)escala=Math.max(3.4,actual*2.3);
+ if(reaccion===0)escala=Math.max(5,actual*2.5);
  if(reaccion===1)escala=Math.max(.55,actual*(.45+Math.random()*.2));
  if(reaccion>=2){const angulo=Math.random()*Math.PI*2,distancia=Math.min(campo.width,campo.height)*(.22+Math.random()*.2);dx=Math.cos(angulo)*distancia;dy=Math.sin(angulo)*distancia;escala=reaccion===2?Math.min(actual,1.1):.65+Math.random()*.7}
  gatoUri.style.setProperty("--uri-flow",`${140+Math.random()*100}ms`);
@@ -241,17 +246,21 @@ function acariciarUri(e){
  const ahora=performance.now();ultimaInteraccionUri=ahora;if(ahora-ultimaHuellaUri>15000){window.observarUgju?.("uri_pet","uri");ultimaHuellaUri=ahora}
  feedbackUri(e);iluminarMemoriaUri();mostrarRonroneoUri();clearTimeout(esperaUri);
  gatoUri.classList.remove("is-vanishing","is-shadow","is-absent");gatoUri.classList.add("is-petted");
+ if(reaccion===3)finalizarCariciaUri();
 }
 gatoUri.onanimationend=e=>{if(e.animationName==="uri-touch-pulse")gatoUri.classList.remove("is-touching")};
-document.body.addEventListener("animationend",e=>{if(e.animationName==="uri-memory-light")document.body.classList.remove("uri-memory")});
+document.body.addEventListener("animationend",e=>{if(e.animationName==="uri-memory-light"&&!contactoUri)document.body.classList.remove("uri-memory")});
 // Pointer Events unifica pantalla táctil, mouse y trackpad (estos dos últimos llegan como "mouse").
 gatoUri.onpointerdown=e=>{if(e.isPrimary===false||e.button>0||contactoUri)return;punteroUri=e.pointerId;contactoUri=true;pulsoAceptadoUri=false;sostenerVibracionUri(e);gatoUri.classList.add("is-purring");try{gatoUri.setPointerCapture?.(e.pointerId)}catch{}acariciarUri(e)};
-gatoUri.onpointermove=e=>{if(contactoUri&&e.pointerId===punteroUri){mostrarRonroneoUri();sostenerVibracionUri(e)}};
+gatoUri.onpointermove=e=>{if(contactoUri&&e.pointerId===punteroUri){const r=gatoUri.getBoundingClientRect();if(e.buttons===0||e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom){finalizarCariciaUri(e);return}mostrarRonroneoUri();sostenerVibracionUri(e)}};
 // pointerup ya cuenta como activación táctil incluso en el primer contacto.
 gatoUri.onpointerup=e=>{if(e.pointerId!==punteroUri)return;const respaldo=!pulsoAceptadoUri;finalizarCariciaUri(e);if(respaldo&&["touch","pen"].includes(e.pointerType))vibrarUri([55,30,55,30,75])};
 gatoUri.onpointercancel=finalizarCariciaUri;
 gatoUri.onlostpointercapture=e=>{if(contactoUri)finalizarCariciaUri(e)};
 gatoUri.onclick=e=>{if(e.detail===0&&!contactoUri){acariciarUri(e);esperaUri=setTimeout(()=>finalizarCariciaUri(),350)}};
+// Limpieza incluso al cambiar de FUEGO o cerrar la página durante el press.
+new MutationObserver(()=>{if(campoUri.closest(".fire").hidden)finalizarCariciaUri()}).observe(campoUri.closest(".fire"),{attributes:true,attributeFilter:["hidden"]});
+window.addEventListener("pagehide",()=>finalizarCariciaUri());
 window.addEventListener("blur",()=>finalizarCariciaUri());
 document.addEventListener("visibilitychange",()=>{if(document.hidden)finalizarCariciaUri()});
 window.addEventListener("resize",()=>{if(fuegoActual!=="uri")return;finalizarCariciaUri();clearTimeout(esperaUri);estadoCariciaUri=null;gatoUri.style.setProperty("--uri-flow","0ms");const r=campoUri.getBoundingClientRect();colocarUri(r.left+r.width/2,r.top+r.height/2,1);esperaUri=setTimeout(moverUri,1600)});
