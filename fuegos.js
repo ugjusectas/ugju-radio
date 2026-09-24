@@ -174,13 +174,15 @@ campoObjeto.onpointerup=()=>{if(!gestoTetris)return;if(finTetris)prepararObjeto(
 campoObjeto.onpointercancel=()=>{gestoTetris=null;campoObjeto.classList.remove("is-dragging")};
 
 // Uri: cabeza y cola, presencia guardiana que aparece y se desvanece.
-const campoUri=document.querySelector('[data-firepiece="uri"]'),gatoUri=campoUri.querySelector(".uri-cat"),ronroneoUri=document.querySelector('[data-fire="uri"] .uri-purr');let esperaUri,esperaRonroneoUri,ultimoFeedbackUri=0,ultimaMemoriaUri=0,ultimaInteraccionUri=0,ultimaHuellaUri=0,contactoUri=false,vibracionUri=null,estadoCariciaUri=null,punteroUri=null,ultimaReaccionUri=-1;
+const campoUri=document.querySelector('[data-firepiece="uri"]'),gatoUri=campoUri.querySelector(".uri-cat"),ronroneoUri=document.querySelector('[data-fire="uri"] .uri-purr');let esperaUri,esperaRonroneoUri,ultimoFeedbackUri=0,ultimaMemoriaUri=0,ultimaInteraccionUri=0,ultimaHuellaUri=0,contactoUri=false,vibracionUri=null,estadoCariciaUri=null,punteroUri=null,ultimaReaccionUri=-1,reaccionesUri=[],pulsoAceptadoUri=false;
 function escalaAleatoriaUri(){const azar=Math.random();if(azar<.18)return 1.85+Math.random()*.8;if(azar<.48)return .5+Math.random()*.34;return .92+Math.random()*.58}
 // Limita también el rectángulo transformado, conservando el origen visual actual.
-function colocarUri(x,y,escala){
+function colocarUri(x,y,escala,ampliar=false){
  const r=campoUri.getBoundingClientRect(),w=gatoUri.offsetWidth,h=gatoUri.offsetHeight;
- const izquierda=Math.max(r.left,0)+8,derecha=Math.min(r.right,innerWidth)-8;
- const arriba=Math.max(r.top,0)+8,abajo=Math.min(r.bottom,innerHeight)-8;
+ // La ampliación usa el espacio visible de URI, sin tapar navegación ni salir de pantalla.
+ const margen=ampliar?r.width*.3:0;
+ const izquierda=Math.max(r.left-margen,12)+8,derecha=Math.min(r.right+margen,innerWidth-12)-8;
+ const arriba=Math.max(r.top-margen,72)+8,abajo=Math.min(r.bottom+margen,innerHeight-100)-8;
  if(!w||!h||derecha<=izquierda||abajo<=arriba)return;
  escala=Math.max(.01,Math.min(Math.max(escala,44/w,44/h),(derecha-izquierda)/w,(abajo-arriba)/h));
  x=Math.max(izquierda+w*escala/2,Math.min(derecha-w*escala/2,x));
@@ -205,7 +207,9 @@ function detenerVibracionUri(){clearInterval(vibracionUri);vibracionUri=null;vib
 function sostenerVibracionUri(e){
  if(!["touch","pen"].includes(e?.pointerType)||vibracionUri!==null)return;
  const pulso=()=>{if(fuegoActual!=="uri"||!contactoUri){detenerVibracionUri();return false}return vibrarUri([55,30,55,30,75])};
- if(pulso())vibracionUri=setInterval(pulso,300);
+ pulsoAceptadoUri=pulso();
+ // Reintenta durante la caricia si la activación inicial aún no estaba disponible.
+ vibracionUri=setInterval(()=>{pulsoAceptadoUri=pulso()||pulsoAceptadoUri},300);
 }
 function finalizarCariciaUri(e){
  if(e&&e.pointerId!==punteroUri)return;
@@ -214,25 +218,26 @@ function finalizarCariciaUri(e){
  gatoUri.classList.remove("is-purring","is-touching");prolongarRonroneoUri();clearTimeout(esperaUri);
  // Deja ver incluso un toque breve antes de volver suavemente.
  const volver=()=>{gatoUri.style.setProperty("--uri-flow","700ms");if(estadoCariciaUri){colocarUri(estadoCariciaUri.x,estadoCariciaUri.y,estadoCariciaUri.escala);estadoCariciaUri=null}gatoUri.classList.remove("is-petted");esperaUri=setTimeout(moverUri,1600)};
- esperaUri=setTimeout(volver,e?.type==="pointercancel"?0:Math.max(0,240-(performance.now()-ultimaInteraccionUri)));
+ esperaUri=setTimeout(volver,e?.type==="pointercancel"?0:Math.max(0,650-(performance.now()-ultimaInteraccionUri)));
  if(id!==null&&gatoUri.hasPointerCapture?.(id))gatoUri.releasePointerCapture(id);
 }
 function prepararUri(){punteroUri=null;estadoCariciaUri=null;clearTimeout(esperaUri);clearTimeout(esperaRonroneoUri);detenerVibracionUri();contactoUri=false;ocultarRonroneoUri();document.body.classList.remove("uri-memory");gatoUri.classList.remove("is-vanishing","is-shadow","is-absent","is-petted","is-touching","is-purring");moverUri()}
-function feedbackUri(e){const ahora=performance.now();gatoUri.classList.remove("is-touching");void gatoUri.offsetWidth;gatoUri.classList.add("is-touching");if(!vibracionUri&&e?.pointerType!=="mouse"&&ahora-ultimoFeedbackUri>140){vibrarUri([18,24,18]);ultimoFeedbackUri=ahora}}
+function feedbackUri(){gatoUri.classList.remove("is-touching");void gatoUri.offsetWidth;gatoUri.classList.add("is-touching")}
 function iluminarMemoriaUri(){const ahora=performance.now();if(ahora-ultimaMemoriaUri<900)return;ultimaMemoriaUri=ahora;document.body.classList.remove("uri-memory");void document.body.offsetWidth;document.body.classList.add("uri-memory")}
 function acariciarUri(e){
- if(e)e.preventDefault();
+ // touch-action:none y pointer capture gestionan el gesto sin cancelar su activación nativa.
  const r=gatoUri.getBoundingClientRect(),campo=campoUri.getBoundingClientRect();
  const actual=r.width/Math.max(1,gatoUri.offsetWidth),x=r.left+r.width/2,y=r.top+r.height/2;
  estadoCariciaUri={x,y,escala:actual};
- // Sorteo independiente, excluyendo únicamente la reacción inmediatamente anterior.
- const opciones=[0,1,2,3].filter(n=>n!==ultimaReaccionUri),reaccion=opciones[Math.floor(Math.random()*opciones.length)];ultimaReaccionUri=reaccion;
+ // Bolsa aleatoria: dos ampliaciones, un encogimiento y un salto cada cuatro contactos.
+ if(!reaccionesUri.length){reaccionesUri=[0,0,1,2];for(let i=3;i>0;i--){const j=Math.floor(Math.random()*(i+1));[reaccionesUri[i],reaccionesUri[j]]=[reaccionesUri[j],reaccionesUri[i]]}}
+ const reaccion=reaccionesUri.pop();ultimaReaccionUri=reaccion;
  let escala=actual,dx=0,dy=0;
- if(reaccion===0)escala=Math.max(1.65,actual*(1.35+Math.random()*.45));
+ if(reaccion===0)escala=Math.max(3.4,actual*2.3);
  if(reaccion===1)escala=Math.max(.55,actual*(.45+Math.random()*.2));
  if(reaccion>=2){const angulo=Math.random()*Math.PI*2,distancia=Math.min(campo.width,campo.height)*(.22+Math.random()*.2);dx=Math.cos(angulo)*distancia;dy=Math.sin(angulo)*distancia;escala=reaccion===2?Math.min(actual,1.1):.65+Math.random()*.7}
  gatoUri.style.setProperty("--uri-flow",`${140+Math.random()*100}ms`);
- colocarUri(x+dx,y+dy,escala);
+ colocarUri(x+dx,y+dy,escala,reaccion===0);
  const ahora=performance.now();ultimaInteraccionUri=ahora;if(ahora-ultimaHuellaUri>15000){window.observarUgju?.("uri_pet","uri");ultimaHuellaUri=ahora}
  feedbackUri(e);iluminarMemoriaUri();mostrarRonroneoUri();clearTimeout(esperaUri);
  gatoUri.classList.remove("is-vanishing","is-shadow","is-absent");gatoUri.classList.add("is-petted");
@@ -240,10 +245,10 @@ function acariciarUri(e){
 gatoUri.onanimationend=e=>{if(e.animationName==="uri-touch-pulse")gatoUri.classList.remove("is-touching")};
 document.body.addEventListener("animationend",e=>{if(e.animationName==="uri-memory-light")document.body.classList.remove("uri-memory")});
 // Pointer Events unifica pantalla táctil, mouse y trackpad (estos dos últimos llegan como "mouse").
-gatoUri.onpointerdown=e=>{if(e.isPrimary===false||e.button>0||contactoUri)return;punteroUri=e.pointerId;contactoUri=true;gatoUri.classList.add("is-purring");gatoUri.setPointerCapture?.(e.pointerId);acariciarUri(e);sostenerVibracionUri(e)};
+gatoUri.onpointerdown=e=>{if(e.isPrimary===false||e.button>0||contactoUri)return;punteroUri=e.pointerId;contactoUri=true;pulsoAceptadoUri=false;sostenerVibracionUri(e);gatoUri.classList.add("is-purring");try{gatoUri.setPointerCapture?.(e.pointerId)}catch{}acariciarUri(e)};
 gatoUri.onpointermove=e=>{if(contactoUri&&e.pointerId===punteroUri){mostrarRonroneoUri();sostenerVibracionUri(e)}};
 // pointerup ya cuenta como activación táctil incluso en el primer contacto.
-gatoUri.onpointerup=e=>{if(e.pointerId!==punteroUri)return;finalizarCariciaUri(e);if(["touch","pen"].includes(e.pointerType))vibrarUri([55,30,55,30,75])};
+gatoUri.onpointerup=e=>{if(e.pointerId!==punteroUri)return;const respaldo=!pulsoAceptadoUri;finalizarCariciaUri(e);if(respaldo&&["touch","pen"].includes(e.pointerType))vibrarUri([55,30,55,30,75])};
 gatoUri.onpointercancel=finalizarCariciaUri;
 gatoUri.onlostpointercapture=e=>{if(contactoUri)finalizarCariciaUri(e)};
 gatoUri.onclick=e=>{if(e.detail===0&&!contactoUri){acariciarUri(e);esperaUri=setTimeout(()=>finalizarCariciaUri(),350)}};
