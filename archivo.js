@@ -359,4 +359,20 @@ window.addEventListener("message",evento => {
 });
 
 
+// El enlace se controla desde su propio documento: no depende de que el
+// padre alcance a escuchar el evento load del iframe (caché/red rápida).
+document.getElementById("back-link").addEventListener("click",evento => {
+    if (!estaDentroDeRadio) return;
+    evento.preventDefault();
+    window.parent.postMessage({type:"ugju-archive-close"},window.location.origin);
+});
+
+function solicitarEstadoArchivo() {
+    if (estaDentroDeRadio) {
+        window.parent.postMessage({type:"ugju-archive-ready"},window.location.origin);
+    }
+}
+window.addEventListener("pageshow",solicitarEstadoArchivo);
+solicitarEstadoArchivo();
+
 cargarCatalogo();

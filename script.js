@@ -410,10 +410,11 @@ function cerrarVentana(devolverFoco = false) {
 function abrirArchivo() {
 
     if (!archivoCargado) {
-        marcoArchivo.src = "archivo.html?inside=radio";
+        marcoArchivo.src = "archivo.html?inside=radio&v=20260926-audio-1";
         archivoCargado = true;
     }
 
+    informarEstadoArchivo();
     capaArchivo.hidden = false;
     capaArchivo.setAttribute("aria-hidden","false");
     marcoArchivo.contentWindow?.postMessage(
@@ -557,6 +558,7 @@ async function iniciarVivo(esReconexion = false) {
         return;
     }
 
+    finalizarArchivo();
     cancelarReconexionVivo();
     vivoConectando = true;
 
@@ -659,6 +661,7 @@ function alternarVivo() {
         return;
     }
 
+    restaurarControlesVivo();
     escuchaVivoIniciadaPorUsuario = true;
     intentoReconexionVivo = 0;
     iniciarVivo();
@@ -1012,7 +1015,7 @@ async function reproducirEntradaArchivo(entrada) {
     }
 
     try {
-        await audioArchivo.play();
+        await reanudarArchivo();
         const detalle = String(entrada.identifier || "session")
             .toLowerCase()
             .replace(/[^a-z0-9_-]/g,"_")
@@ -1054,12 +1057,23 @@ function volverAlVivo() {
 
 function finalizarArchivo() {
 
+    if (!entradaArchivoActual && !audioArchivo.getAttribute("src")) return;
+    audioArchivo.pause();
     audioArchivo.removeAttribute("src");
     audioArchivo.load();
     entradaArchivoActual = null;
     actualizarSesionMultimedia();
     informarEstadoArchivo();
     restaurarControlesVivo();
+
+}
+
+
+function reanudarArchivo() {
+
+    if (!entradaArchivoActual) return Promise.resolve();
+    detenerVivoParaArchivo();
+    return audioArchivo.play();
 
 }
 
@@ -1071,7 +1085,7 @@ function alternarPausaArchivo() {
     }
 
     if (audioArchivo.paused) {
-        audioArchivo.play().catch(informarEstadoArchivo);
+        reanudarArchivo().catch(informarEstadoArchivo);
     } else {
         audioArchivo.pause();
     }
@@ -1169,40 +1183,7 @@ marcoManifiesto.addEventListener(
 );
 
 
-marcoArchivo.addEventListener(
-    "load",
-    () => {
-
-        try {
-
-            const enlaceVolver =
-                marcoArchivo.contentDocument
-                    ?.getElementById("back-link");
-
-            if (!enlaceVolver) {
-                return;
-            }
-
-            enlaceVolver.addEventListener(
-                "click",
-                evento => {
-
-                    evento.preventDefault();
-                    cerrarArchivo();
-
-                }
-            );
-
-            informarEstadoArchivo();
-
-        } catch (error) {
-
-            /* La página independiente conserva su enlace normal. */
-
-        }
-
-    }
-);
+marcoArchivo.addEventListener("load",informarEstadoArchivo);
 
 
 window.addEventListener(
@@ -1236,6 +1217,14 @@ window.addEventListener(
             audioArchivo.volume = base.archivo * factor;
             if (factor === 1) volumenAntesFuegos = null;
             return;
+        }
+
+        if (
+            evento.origin === window.location.origin &&
+            evento.source === marcoArchivo.contentWindow
+        ) {
+            if (evento.data?.type === "ugju-archive-ready") informarEstadoArchivo();
+            if (evento.data?.type === "ugju-archive-close") cerrarArchivo(true);
         }
 
         if (
@@ -1287,6 +1276,16 @@ audioVivo.addEventListener("timeupdate",() => {
         ultimaPosicionVivo = audioVivo.currentTime;
         ultimoAvanceVivo = Date.now();
     }
+});
+
+audioVivo.addEventListener("play",() => {
+    if (!escuchaVivoIniciadaPorUsuario || vivoDetenidoPorArchivo) audioVivo.pause();
+    else audioArchivo.pause();
+});
+
+audioArchivo.addEventListener("play",() => {
+    if (!entradaArchivoActual || !vivoDetenidoPorArchivo) audioArchivo.pause();
+    else audioVivo.pause();
 });
 
 audioVivo.addEventListener("playing",() => {
@@ -1390,7 +1389,7 @@ if ("mediaSession" in navigator) {
     registrarAccionMultimedia(
         "play",
         () => entradaArchivoActual
-            ? audioArchivo.play()
+            ? reanudarArchivo().catch(informarEstadoArchivo)
             : alternarVivo()
     );
 
