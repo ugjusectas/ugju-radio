@@ -4,14 +4,14 @@ const idioma = (navigator.languages || [navigator.language])
     .find(codigo => idiomasDisponibles.includes(codigo)) || "en";
 
 const textos = {
-    es:{title:"ARCHIVO",subtitle:"Emisiones guardadas en la casa",listen:"ESCUCHAR",pause:"PAUSA",stop:"DETENER",back:"VOLVER A LA CASA",loading:"BUSCANDO EN EL ARCHIVO...",empty:"TODAVÍA NO HAY EMISIONES ARCHIVADAS",error:"NO SE PUDO REPRODUCIR EL ARCHIVO"},
-    en:{title:"ARCHIVE",subtitle:"Broadcasts kept in the house",listen:"LISTEN",pause:"PAUSE",stop:"STOP",back:"RETURN TO THE HOUSE",loading:"SEARCHING THE ARCHIVE...",empty:"THERE ARE NO ARCHIVED BROADCASTS YET",error:"THE ARCHIVE COULD NOT BE PLAYED"},
-    de:{title:"ARCHIV",subtitle:"Im Haus bewahrte Sendungen",listen:"ANHÖREN",pause:"PAUSE",stop:"STOPP",back:"ZURÜCK ZUM HAUS",loading:"ARCHIV WIRD DURCHSUCHT...",empty:"NOCH KEINE ARCHIVIERTEN SENDUNGEN",error:"DAS ARCHIV KONNTE NICHT ABSPIELEN"},
-    fi:{title:"ARKISTO",subtitle:"Talossa säilytetyt lähetykset",listen:"KUUNTELE",pause:"TAUKO",stop:"PYSÄYTÄ",back:"PALAA TALOON",loading:"ETSITÄÄN ARKISTOSTA...",empty:"ARKISTOITUJA LÄHETYKSIÄ EI VIELÄ OLE",error:"ARKISTOA EI VOITU TOISTAA"},
-    fr:{title:"ARCHIVES",subtitle:"Émissions conservées dans la maison",listen:"ÉCOUTER",pause:"PAUSE",stop:"ARRÊTER",back:"RETOUR À LA MAISON",loading:"RECHERCHE DANS LES ARCHIVES...",empty:"AUCUNE ÉMISSION ARCHIVÉE POUR LE MOMENT",error:"IMPOSSIBLE DE LIRE L’ARCHIVE"},
-    it:{title:"ARCHIVIO",subtitle:"Trasmissioni custodite nella casa",listen:"ASCOLTA",pause:"PAUSA",stop:"FERMA",back:"TORNA ALLA CASA",loading:"RICERCA NELL’ARCHIVIO...",empty:"NON CI SONO ANCORA TRASMISSIONI ARCHIVIATE",error:"IMPOSSIBILE RIPRODURRE L’ARCHIVIO"},
-    ja:{title:"アーカイブ",subtitle:"家に保管された放送",listen:"聴く",pause:"一時停止",stop:"停止",back:"家に戻る",loading:"アーカイブを検索中...",empty:"アーカイブされた放送はまだありません",error:"アーカイブを再生できませんでした"},
-    zh:{title:"档案",subtitle:"保存在屋中的广播",listen:"收听",pause:"暂停",stop:"停止",back:"返回屋中",loading:"正在搜索档案...",empty:"目前还没有存档广播",error:"无法播放档案"}
+    es:{title:"ARCHIVO",subtitle:"Emisiones guardadas en la casa",listen:"ESCUCHAR",pause:"PAUSA",resume:"REANUDAR",restart:"AL INICIO",back:"VOLVER A LA CASA",loading:"BUSCANDO EN EL ARCHIVO...",empty:"TODAVÍA NO HAY EMISIONES ARCHIVADAS",error:"NO SE PUDO REPRODUCIR EL ARCHIVO"},
+    en:{title:"ARCHIVE",subtitle:"Broadcasts kept in the house",listen:"LISTEN",pause:"PAUSE",resume:"RESUME",restart:"RESTART",back:"RETURN TO THE HOUSE",loading:"SEARCHING THE ARCHIVE...",empty:"THERE ARE NO ARCHIVED BROADCASTS YET",error:"THE ARCHIVE COULD NOT BE PLAYED"},
+    de:{title:"ARCHIV",subtitle:"Im Haus bewahrte Sendungen",listen:"ANHÖREN",pause:"PAUSE",resume:"FORTSETZEN",restart:"ZUM ANFANG",back:"ZURÜCK ZUM HAUS",loading:"ARCHIV WIRD DURCHSUCHT...",empty:"NOCH KEINE ARCHIVIERTEN SENDUNGEN",error:"DAS ARCHIV KONNTE NICHT ABSPIELEN"},
+    fi:{title:"ARKISTO",subtitle:"Talossa säilytetyt lähetykset",listen:"KUUNTELE",pause:"TAUKO",resume:"JATKA",restart:"ALKUUN",back:"PALAA TALOON",loading:"ETSITÄÄN ARKISTOSTA...",empty:"ARKISTOITUJA LÄHETYKSIÄ EI VIELÄ OLE",error:"ARKISTOA EI VOITU TOISTAA"},
+    fr:{title:"ARCHIVES",subtitle:"Émissions conservées dans la maison",listen:"ÉCOUTER",pause:"PAUSE",resume:"REPRENDRE",restart:"AU DÉBUT",back:"RETOUR À LA MAISON",loading:"RECHERCHE DANS LES ARCHIVES...",empty:"AUCUNE ÉMISSION ARCHIVÉE POUR LE MOMENT",error:"IMPOSSIBLE DE LIRE L’ARCHIVE"},
+    it:{title:"ARCHIVIO",subtitle:"Trasmissioni custodite nella casa",listen:"ASCOLTA",pause:"PAUSA",resume:"RIPRENDI",restart:"ALL’INIZIO",back:"TORNA ALLA CASA",loading:"RICERCA NELL’ARCHIVIO...",empty:"NON CI SONO ANCORA TRASMISSIONI ARCHIVIATE",error:"IMPOSSIBILE RIPRODURRE L’ARCHIVIO"},
+    ja:{title:"アーカイブ",subtitle:"家に保管された放送",listen:"聴く",pause:"一時停止",resume:"再開",restart:"最初から",back:"家に戻る",loading:"アーカイブを検索中...",empty:"アーカイブされた放送はまだありません",error:"アーカイブを再生できませんでした"},
+    zh:{title:"档案",subtitle:"保存在屋中的广播",listen:"收听",pause:"暂停",resume:"继续",restart:"回到开头",back:"返回屋中",loading:"正在搜索档案...",empty:"目前还没有存档广播",error:"无法播放档案"}
 };
 
 const copia = textos[idioma];
@@ -43,7 +43,7 @@ function formatearFecha(fecha) {
 
 
 function formatearDuracion(segundos) {
-    const total = Math.max(0,Math.round(Number(segundos) || 0));
+    const total = Math.max(0,Math.floor(Number(segundos) || 0));
     const horas = Math.floor(total / 3600);
     const minutos = Math.floor((total % 3600) / 60);
     const restantes = total % 60;
@@ -57,25 +57,21 @@ function formatearDuracion(segundos) {
 function actualizarControles() {
     document.querySelectorAll(".archive-control")
         .forEach(control => {
-            const estaActivo =
-                control.dataset.identifier ===
-                estadoReproduccion.identifier &&
-                !estadoReproduccion.paused;
+            const esActual = control.dataset.identifier === estadoReproduccion.identifier;
+            const estaActivo = esActual && !estadoReproduccion.paused && !estadoReproduccion.ended;
+            control.textContent = estaActivo ? copia.pause
+                : esActual && !estadoReproduccion.ended ? copia.resume : copia.listen;
+            control.setAttribute("aria-pressed",String(estaActivo));
 
-            control.textContent =
-                estaActivo ? copia.pause : copia.listen;
-            control.setAttribute(
-                "aria-pressed",
-                String(estaActivo)
-            );
-
-            const detener = control.parentElement
-                ?.querySelector(".archive-stop");
-
-            if (detener) {
-                detener.hidden =
-                    control.dataset.identifier !==
-                    estadoReproduccion.identifier;
+            const reiniciar = control.parentElement?.querySelector(".archive-restart");
+            if (reiniciar) reiniciar.hidden = !esActual;
+            const duracion = control.closest(".archive-entry")?.querySelector(".archive-duration");
+            if (duracion) {
+                const total = esActual ? estadoReproduccion.duration || duracion.dataset.duration
+                    : duracion.dataset.duration;
+                duracion.textContent = esActual
+                    ? `${formatearDuracion(estadoReproduccion.currentTime)} / ${formatearDuracion(total)}`
+                    : formatearDuracion(total);
             }
         });
 }
@@ -90,7 +86,7 @@ function renderizarCatalogo(entradas) {
         const titulo = document.createElement("span");
         const duracion = document.createElement("span");
         const control = document.createElement("button");
-        const detener = document.createElement("button");
+        const reiniciar = document.createElement("button");
         const controles = document.createElement("div");
 
         item.className = "archive-entry";
@@ -99,6 +95,7 @@ function renderizarCatalogo(entradas) {
         titulo.className = "archive-entry-title";
         titulo.textContent = entrada.title;
         duracion.className = "archive-duration";
+        duracion.dataset.duration = entrada.duration;
         duracion.textContent = formatearDuracion(entrada.duration);
         control.className = "archive-control";
         control.type = "button";
@@ -110,14 +107,14 @@ function renderizarCatalogo(entradas) {
             () => alternarEntrada(entrada)
         );
 
-        detener.className = "archive-stop";
-        detener.type = "button";
-        detener.hidden = true;
-        detener.textContent = copia.stop;
-        detener.addEventListener("click",detenerArchivo);
+        reiniciar.className = "archive-restart";
+        reiniciar.type = "button";
+        reiniciar.hidden = true;
+        reiniciar.textContent = copia.restart;
+        reiniciar.addEventListener("click",reiniciarArchivo);
 
         controles.className = "archive-controls";
-        controles.append(control,detener);
+        controles.append(control,reiniciar);
 
         item.append(fecha,titulo,duracion,controles);
         lista.appendChild(item);
@@ -135,7 +132,10 @@ function informarSesionIndependiente() {
 
     estadoReproduccion = {
         identifier: audioIndependiente.dataset.identifier || null,
-        paused: audioIndependiente.paused
+        paused: audioIndependiente.paused,
+        ended: audioIndependiente.ended,
+        currentTime: audioIndependiente.currentTime || 0,
+        duration: Number.isFinite(audioIndependiente.duration) ? audioIndependiente.duration : 0
     };
     actualizarControles();
 }
@@ -146,14 +146,13 @@ async function reproducirIndependiente(entrada) {
         audioIndependiente = document.createElement("audio");
         audioIndependiente.preload = "metadata";
         audioIndependiente.setAttribute("playsinline","");
-        audioIndependiente.addEventListener("play",informarSesionIndependiente);
+        ["play","pause","ended","timeupdate","loadedmetadata","durationchange","seeking","seeked","error"]
+            .forEach(tipo => audioIndependiente.addEventListener(tipo,informarSesionIndependiente));
         audioIndependiente.addEventListener("playing",() => {
             const detalle = String(audioIndependiente.dataset.identifier || "session")
                 .toLowerCase().replace(/[^a-z0-9_-]/g,"_").slice(0,64);
             window.observarUgju?.("archive_play",detalle);
         });
-        audioIndependiente.addEventListener("pause",informarSesionIndependiente);
-        audioIndependiente.addEventListener("ended",detenerIndependiente);
         document.body.appendChild(audioIndependiente);
     }
 
@@ -166,6 +165,7 @@ async function reproducirIndependiente(entrada) {
     }
 
     if (audioIndependiente.dataset.identifier !== entrada.identifier) {
+        audioIndependiente.pause();
         audioIndependiente.dataset.identifier = entrada.identifier;
         audioIndependiente.src = entrada.audioUrl;
     }
@@ -182,36 +182,20 @@ async function reproducirIndependiente(entrada) {
         });
     }
 
+    if (audioIndependiente.ended) audioIndependiente.currentTime = 0;
     await audioIndependiente.play();
 }
 
 
-function detenerIndependiente() {
-    if (!audioIndependiente) {
-        return;
-    }
-
-    audioIndependiente.pause();
-    audioIndependiente.removeAttribute("src");
-    audioIndependiente.load();
-    audioIndependiente.dataset.identifier = "";
-
-    if ("mediaSession" in navigator) {
-        navigator.mediaSession.metadata = null;
-    }
-
-    informarSesionIndependiente();
-}
-
-
-function detenerArchivo() {
+function reiniciarArchivo() {
     if (estaDentroDeRadio) {
         window.parent.postMessage(
-            {type:"ugju-archive-stop"},
+            {type:"ugju-archive-restart"},
             window.location.origin
         );
-    } else {
-        detenerIndependiente();
+    } else if (audioIndependiente) {
+        audioIndependiente.currentTime = 0;
+        informarSesionIndependiente();
     }
 }
 
@@ -232,7 +216,7 @@ async function alternarEntrada(entrada) {
             await reproducirIndependiente(entrada);
         }
     } catch (error) {
-        estado.textContent = copia.error;
+        if (error.name !== "AbortError") estado.textContent = copia.error;
     }
 }
 
@@ -354,7 +338,7 @@ window.addEventListener("message",evento => {
     }
 
     if (evento.data?.type === "ugju-archive-error") {
-        estado.textContent = copia.error;
+        if (error.name !== "AbortError") estado.textContent = copia.error;
     }
 });
 

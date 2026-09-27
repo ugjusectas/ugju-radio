@@ -95,7 +95,7 @@ h1{
 
 .archive-entry{
     display:grid;
-    grid-template-columns:8ch minmax(0,1fr) 7ch auto;
+    grid-template-columns:8ch minmax(0,1fr) auto auto;
     gap:clamp(8px,2vw,24px);
     align-items:baseline;
     padding:12px 0 10px;
@@ -104,7 +104,7 @@ h1{
 }
 
 .archive-entry-title{min-width:0}
-.archive-duration{text-align:right}
+.archive-duration{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 
 .archive-control{
     padding:0 0 2px;
@@ -122,7 +122,7 @@ h1{
     gap:clamp(7px,1.4vw,14px);
 }
 
-.archive-stop{
+.archive-restart{
     padding:0 0 2px;
     border:0;
     border-bottom:1px solid currentColor;
@@ -132,8 +132,8 @@ h1{
     cursor:pointer;
 }
 
-.archive-stop[hidden]{display:none}
-.archive-control:hover,.archive-control:focus-visible,.archive-stop:hover,.archive-stop:focus-visible{opacity:.62}
+.archive-restart[hidden]{display:none}
+.archive-control:hover,.archive-control:focus-visible,.archive-restart:hover,.archive-restart:focus-visible{opacity:.62}
 .archive-entry audio{display:none}
 
 .archive-status{
@@ -186,9 +186,10 @@ h1{
         font-size:.66rem;
     }
     .archive-entry-title{padding-left:2px}
-    .archive-duration{display:none}
+    .archive-duration{grid-column:2;grid-row:2;text-align:left}
+    .archive-controls{grid-column:3;grid-row:1 / span 2;flex-wrap:wrap;max-width:14ch}
 }
 
 /* Shared type scale; controls keep their natural content width. */
-.archive-control,.archive-stop{font:inherit;font-weight:700;min-width:0;overflow-wrap:anywhere}
+.archive-control,.archive-restart{font:inherit;font-weight:700;min-width:0;overflow-wrap:anywhere}
 .archive-entry-title,h1,#archive-subtitle,#archive-status,#back-link{overflow-wrap:anywhere;min-width:0}

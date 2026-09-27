@@ -410,7 +410,7 @@ function cerrarVentana(devolverFoco = false) {
 function abrirArchivo() {
 
     if (!archivoCargado) {
-        marcoArchivo.src = "archivo.html?inside=radio&v=20260926-audio-1";
+        marcoArchivo.src = "archivo.html?inside=radio&v=20260926-audio-2";
         archivoCargado = true;
     }
 
@@ -470,18 +470,10 @@ function restaurarControlesVivo() {
 
 
 function detenerVivoParaArchivo() {
-
-    generacionVivo += 1;
-    clearTimeout(temporizadorInicioVivo);
-    cancelarReconexionVivo(true);
-    audioVivo.pause();
-    vivoConectando = false;
-    escuchaVivoIniciadaPorUsuario = false;
-    vivoIniciadoConExito = false;
+    detenerEscuchaVivo();
     vivoDetenidoPorArchivo = true;
     panelArchivo.hidden = false;
     actualizarControlVivo();
-
 }
 
 
@@ -558,7 +550,8 @@ async function iniciarVivo(esReconexion = false) {
         return;
     }
 
-    finalizarArchivo();
+    audioArchivo.pause();
+    informarEstadoArchivo();
     cancelarReconexionVivo();
     vivoConectando = true;
 
@@ -678,9 +671,11 @@ function detenerEscuchaVivo() {
     clearTimeout(temporizadorInicioVivo);
     cancelarReconexionVivo(true);
     audioVivo.pause();
+    audioVivo.removeAttribute("src");
+    audioVivo.load();
     actualizarControlVivo();
 
-    if ("mediaSession" in navigator && !entradaArchivoActual) {
+    if ("mediaSession" in navigator && !vivoDetenidoPorArchivo) {
         navigator.mediaSession.playbackState = "paused";
     }
 
@@ -757,7 +752,7 @@ function actualizarMetadatosMultimediaVivo(tituloActual) {
     if (
         !("mediaSession" in navigator) ||
         typeof MediaMetadata !== "function" ||
-        entradaArchivoActual
+        vivoDetenidoPorArchivo
     ) {
         return;
     }
@@ -785,7 +780,7 @@ async function comprobarMetadatosVivo() {
         !radioHabitada ||
         !escuchaVivoIniciadaPorUsuario ||
         audioVivo.paused ||
-        entradaArchivoActual
+        vivoDetenidoPorArchivo
     ) {
         ocultarMetadatosVivo();
         return;
@@ -796,7 +791,7 @@ async function comprobarMetadatosVivo() {
     const esBackup = fuente === URL_BACKUP_VIVO;
     const sigueVigente = () => fuenteVivoActual === fuente &&
         generacionVivo === generacion && !audioVivo.paused &&
-        escuchaVivoIniciadaPorUsuario && !entradaArchivoActual;
+        escuchaVivoIniciadaPorUsuario && !vivoDetenidoPorArchivo;
     const controlador = new AbortController();
     const limite = setTimeout(() => controlador.abort(),10000);
 
@@ -846,7 +841,7 @@ async function comprobarMetadatosVivo() {
 
 function actualizarPanelArchivo() {
 
-    if (!entradaArchivoActual) {
+    if (!entradaArchivoActual || !vivoDetenidoPorArchivo) {
         panelArchivo.hidden = true;
         tituloSesionArchivo.textContent = "";
         return;
@@ -867,6 +862,10 @@ function actualizarPanelArchivo() {
         requestAnimationFrame(ajustarDesplazamientoTituloArchivo);
     }
 
+    etiquetaSesionArchivo.textContent = audioArchivo.paused
+        ? etiquetaSesionArchivo.dataset.idle
+        : etiquetaSesionArchivo.dataset.playing;
+    botonPausaArchivo.setAttribute("aria-pressed",String(!audioArchivo.paused));
     botonPausaArchivo.textContent = audioArchivo.paused
         ? botonPausaArchivo.dataset.resume
         : botonPausaArchivo.dataset.pause;
@@ -931,16 +930,17 @@ function informarEstadoArchivo() {
             type: "ugju-archive-state",
             identifier: entradaArchivoActual?.identifier || null,
             paused: audioArchivo.paused,
+            ended: audioArchivo.ended,
             currentTime: audioArchivo.currentTime || 0,
-            duration: audioArchivo.duration ||
-                entradaArchivoActual?.duration || 0
+            duration: Number.isFinite(audioArchivo.duration) && audioArchivo.duration > 0
+                ? audioArchivo.duration : entradaArchivoActual?.duration || 0
         },
         window.location.origin
     );
 
     actualizarPanelArchivo();
 
-    if ("mediaSession" in navigator && entradaArchivoActual) {
+    if ("mediaSession" in navigator && entradaArchivoActual && vivoDetenidoPorArchivo) {
         navigator.mediaSession.playbackState =
             audioArchivo.paused ? "paused" : "playing";
 
@@ -1006,12 +1006,10 @@ async function reproducirEntradaArchivo(entrada) {
         return;
     }
 
-    detenerVivoParaArchivo();
-
     if (!esLaMisma) {
+        audioArchivo.pause();
         entradaArchivoActual = entrada;
         audioArchivo.src = entrada.audioUrl;
-        actualizarSesionMultimedia();
     }
 
     try {
@@ -1023,7 +1021,8 @@ async function reproducirEntradaArchivo(entrada) {
         window.observarUgju?.("archive_play",detalle);
     } catch (error) {
         informarEstadoArchivo();
-        throw error;
+        // Cambiar de fuente o pausar durante la carga cancela play normalmente.
+        if (error.name !== "AbortError") throw error;
     }
 
 }
@@ -1036,36 +1035,24 @@ function volverAlVivo() {
     }
 
     audioArchivo.pause();
-    audioArchivo.removeAttribute("src");
-    audioArchivo.load();
-    entradaArchivoActual = null;
-    actualizarSesionMultimedia();
-    informarEstadoArchivo();
     restaurarControlesVivo();
+    informarEstadoArchivo();
+    actualizarMetadatosMultimediaVivo("");
+    if ("mediaSession" in navigator && navigator.mediaSession.setPositionState) {
+        navigator.mediaSession.setPositionState();
+    }
     escuchaVivoIniciadaPorUsuario = true;
     intentoReconexionVivo = 0;
-    // Una recarga descarta cualquier búfer viejo si el vivo ya se escuchó.
-    // En el primer ingreso, iniciarVivo asigna la URL y reproduce sin una
-    // carga preliminar redundante.
-    if (audioVivo.src) {
-        audioVivo.load();
-    }
     iniciarVivo();
 
 }
 
 
-function finalizarArchivo() {
-
-    if (!entradaArchivoActual && !audioArchivo.getAttribute("src")) return;
-    audioArchivo.pause();
-    audioArchivo.removeAttribute("src");
-    audioArchivo.load();
-    entradaArchivoActual = null;
-    actualizarSesionMultimedia();
+// Volver al inicio mantiene la pausa o la reproducción, según el estado real.
+function reiniciarArchivo() {
+    if (!entradaArchivoActual) return;
+    audioArchivo.currentTime = 0;
     informarEstadoArchivo();
-    restaurarControlesVivo();
-
 }
 
 
@@ -1073,6 +1060,8 @@ function reanudarArchivo() {
 
     if (!entradaArchivoActual) return Promise.resolve();
     detenerVivoParaArchivo();
+    actualizarSesionMultimedia();
+    if (audioArchivo.ended) audioArchivo.currentTime = 0;
     return audioArchivo.play();
 
 }
@@ -1244,10 +1233,9 @@ window.addEventListener(
         if (
             evento.origin === window.location.origin &&
             evento.source === marcoArchivo.contentWindow &&
-            evento.data?.type === "ugju-archive-stop"
+            evento.data?.type === "ugju-archive-restart"
         ) {
-            finalizarArchivo();
-            restaurarControlesVivo();
+            reiniciarArchivo();
         }
 
     }
@@ -1366,12 +1354,10 @@ window.addEventListener("pageshow",solicitarOrientacionVertical);
 solicitarOrientacionVertical();
 
 
-["play","pause","loadedmetadata","timeupdate"]
+["play","playing","pause","loadedmetadata","durationchange","timeupdate","seeking","seeked","ended","error"]
 .forEach(tipo => {
     audioArchivo.addEventListener(tipo,informarEstadoArchivo);
 });
-
-audioArchivo.addEventListener("ended",finalizarArchivo);
 
 
 if ("mediaSession" in navigator) {
@@ -1388,14 +1374,14 @@ if ("mediaSession" in navigator) {
 
     registrarAccionMultimedia(
         "play",
-        () => entradaArchivoActual
+        () => vivoDetenidoPorArchivo && entradaArchivoActual
             ? reanudarArchivo().catch(informarEstadoArchivo)
             : alternarVivo()
     );
 
     registrarAccionMultimedia(
         "pause",
-        () => entradaArchivoActual
+        () => vivoDetenidoPorArchivo && entradaArchivoActual
             ? audioArchivo.pause()
             : detenerEscuchaVivo()
     );
@@ -1403,6 +1389,7 @@ if ("mediaSession" in navigator) {
     registrarAccionMultimedia(
         "seekbackward",
         detalles => {
+            if (!vivoDetenidoPorArchivo || !entradaArchivoActual) return;
             audioArchivo.currentTime = Math.max(
                 0,
                 audioArchivo.currentTime -
@@ -1414,6 +1401,7 @@ if ("mediaSession" in navigator) {
     registrarAccionMultimedia(
         "seekforward",
         detalles => {
+            if (!vivoDetenidoPorArchivo || !entradaArchivoActual) return;
             audioArchivo.currentTime = Math.min(
                 audioArchivo.duration || Infinity,
                 audioArchivo.currentTime +
@@ -1425,6 +1413,7 @@ if ("mediaSession" in navigator) {
     registrarAccionMultimedia(
         "seekto",
         detalles => {
+            if (!vivoDetenidoPorArchivo || !entradaArchivoActual) return;
             if (Number.isFinite(detalles.seekTime)) {
                 audioArchivo.currentTime = detalles.seekTime;
             }
@@ -1730,7 +1719,7 @@ function mostrarEstado(texto) {
 
 function cargarIdioma(codigo) {
 
-    return fetch(`lang/${codigo}.json?v=20260809-5`)
+    return fetch(`lang/${codigo}.json?v=20260926-audio-2`)
 
     .then(respuesta => {
 
@@ -1790,8 +1779,8 @@ cargarIdioma(idioma)
 
     enlaceFuegos.textContent = "FUEGOS";
 
-    etiquetaSesionArchivo.textContent =
-        textos.archive_playing;
+    etiquetaSesionArchivo.dataset.playing = textos.archive_playing;
+    etiquetaSesionArchivo.dataset.idle = textos.archive;
 
     botonPausaArchivo.dataset.pause =
         textos.archive_pause;
