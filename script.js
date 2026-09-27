@@ -410,7 +410,7 @@ function cerrarVentana(devolverFoco = false) {
 function abrirArchivo() {
 
     if (!archivoCargado) {
-        marcoArchivo.src = "archivo.html?inside=radio&v=20260926-audio-2";
+        marcoArchivo.src = "archivo.html?inside=radio&v=20260927-i18n-1";
         archivoCargado = true;
     }
 
@@ -1719,7 +1719,7 @@ function mostrarEstado(texto) {
 
 function cargarIdioma(codigo) {
 
-    return fetch(`lang/${codigo}.json?v=20260926-audio-2`)
+    return fetch(`lang/${codigo}.json?v=20260927-i18n-1`)
 
     .then(respuesta => {
 
@@ -1776,6 +1776,10 @@ cargarIdioma(idioma)
 
     enlaceArchivo.textContent =
         textos.archive;
+
+    const tituloArchivo = `ÚGJÜ RADIO — ${textos.archive}`;
+    marcoArchivo.title = tituloArchivo;
+    capaArchivo.setAttribute("aria-label",tituloArchivo);
 
     enlaceFuegos.textContent = "FUEGOS";
 

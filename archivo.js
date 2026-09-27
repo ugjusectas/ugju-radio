@@ -6,7 +6,7 @@ const idioma = (navigator.languages || [navigator.language])
 const textos = {
     es:{title:"ARCHIVO",subtitle:"Emisiones guardadas en la casa",listen:"ESCUCHAR",pause:"PAUSA",resume:"REANUDAR",restart:"AL INICIO",back:"VOLVER A LA CASA",loading:"BUSCANDO EN EL ARCHIVO...",empty:"TODAVÍA NO HAY EMISIONES ARCHIVADAS",error:"NO SE PUDO REPRODUCIR EL ARCHIVO"},
     en:{title:"ARCHIVE",subtitle:"Broadcasts kept in the house",listen:"LISTEN",pause:"PAUSE",resume:"RESUME",restart:"RESTART",back:"RETURN TO THE HOUSE",loading:"SEARCHING THE ARCHIVE...",empty:"THERE ARE NO ARCHIVED BROADCASTS YET",error:"THE ARCHIVE COULD NOT BE PLAYED"},
-    de:{title:"ARCHIV",subtitle:"Im Haus bewahrte Sendungen",listen:"ANHÖREN",pause:"PAUSE",resume:"FORTSETZEN",restart:"ZUM ANFANG",back:"ZURÜCK ZUM HAUS",loading:"ARCHIV WIRD DURCHSUCHT...",empty:"NOCH KEINE ARCHIVIERTEN SENDUNGEN",error:"DAS ARCHIV KONNTE NICHT ABSPIELEN"},
+    de:{title:"ARCHIV",subtitle:"Im Haus bewahrte Sendungen",listen:"ANHÖREN",pause:"PAUSE",resume:"FORTSETZEN",restart:"ZUM ANFANG",back:"ZURÜCK ZUM HAUS",loading:"ARCHIV WIRD DURCHSUCHT...",empty:"NOCH KEINE ARCHIVIERTEN SENDUNGEN",error:"DIE ARCHIVAUFNAHME KONNTE NICHT ABGESPIELT WERDEN"},
     fi:{title:"ARKISTO",subtitle:"Talossa säilytetyt lähetykset",listen:"KUUNTELE",pause:"TAUKO",resume:"JATKA",restart:"ALKUUN",back:"PALAA TALOON",loading:"ETSITÄÄN ARKISTOSTA...",empty:"ARKISTOITUJA LÄHETYKSIÄ EI VIELÄ OLE",error:"ARKISTOA EI VOITU TOISTAA"},
     fr:{title:"ARCHIVES",subtitle:"Émissions conservées dans la maison",listen:"ÉCOUTER",pause:"PAUSE",resume:"REPRENDRE",restart:"AU DÉBUT",back:"RETOUR À LA MAISON",loading:"RECHERCHE DANS LES ARCHIVES...",empty:"AUCUNE ÉMISSION ARCHIVÉE POUR LE MOMENT",error:"IMPOSSIBLE DE LIRE L’ARCHIVE"},
     it:{title:"ARCHIVIO",subtitle:"Trasmissioni custodite nella casa",listen:"ASCOLTA",pause:"PAUSA",resume:"RIPRENDI",restart:"ALL’INIZIO",back:"TORNA ALLA CASA",loading:"RICERCA NELL’ARCHIVIO...",empty:"NON CI SONO ANCORA TRASMISSIONI ARCHIVIATE",error:"IMPOSSIBILE RIPRODURRE L’ARCHIVIO"},
@@ -338,7 +338,7 @@ window.addEventListener("message",evento => {
     }
 
     if (evento.data?.type === "ugju-archive-error") {
-        if (error.name !== "AbortError") estado.textContent = copia.error;
+        estado.textContent = copia.error;
     }
 });
 

@@ -963,9 +963,15 @@ h1{
     }
 
 
-    .house-note{
+    /* Tipografía móvil deliberada de ÚGJÜ RADIO (valores históricos).
+       Mantenerla aquí: los estilos del reproductor no deben sobrescribirla. */
+    #radio .visitor-guide .house-note{
         width:100%;
 
+        color:#222222;
+        font-family:"Courier Prime","Courier New",monospace;
+        font-style:normal;
+        font-weight:400;
         font-size:clamp(.57rem,calc(var(--content-width) * .026),.76rem);
         line-height:1.22;
     }
